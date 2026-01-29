@@ -6,473 +6,317 @@
 <meta name="color-scheme" content="dark" />
 <title>Dr. Hideki Isoda</title>
 <style>
-  :root{
-    --ink: rgba(235,240,255,.92);
-    --sub: rgba(235,240,255,.62);
-    --line: rgba(255,255,255,.10);
+  html,body{margin:0;height:100%;overflow:hidden;background:#05060a;}
+  canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;}
+  .site-link{
+    position:fixed; right:18px; bottom:16px; z-index:10;
+    font: 11px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    letter-spacing:.08em; text-transform:uppercase;
+    pointer-events:auto;
   }
-  html,body{
-    margin:0; height:100%; overflow:hidden;
-    background:
-      radial-gradient(1200px 900px at 18% 12%, #0c1430 0%, transparent 62%),
-      radial-gradient(1100px 900px at 86% 18%, #2b1244 0%, transparent 62%),
-      radial-gradient(1000px 900px at 55% 92%, #0c2a35 0%, transparent 68%),
-      linear-gradient(180deg, #05060a, #070a12);
-    font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-  }
-  canvas{ position:fixed; inset:0; width:100vw; height:100vh; display:block; }
-
-  .hud{
-    position:fixed; inset:0; pointer-events:none;
-    display:grid; grid-template-rows:auto 1fr auto;
-    padding:clamp(16px,2.2vw,30px);
-  }
-  .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
-  .card{
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.015));
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 14px 18px;
-    max-width: 860px;
-    box-shadow: 0 18px 60px rgba(0,0,0,.35);
-  }
-  .card h1{
-    margin:0;
-    font-size: clamp(14px, 1.9vw, 18px);
-    letter-spacing: .12em;
-    font-weight: 650;
-    color: var(--ink);
-    text-transform: uppercase;
-  }
-  .card p{
-    margin: 8px 0 0;
-    font-size: clamp(12px, 1.5vw, 14px);
-    color: var(--sub);
-    line-height: 1.4;
-  }
-  .signature{
-    color: var(--sub);
-    font-size: 12px;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    padding-top: 6px;
-    filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
-  }
-
-  .footer{
-    display:flex; justify-content:space-between; align-items:flex-end; gap:16px;
-    font-size: 12px; color: var(--sub);
-  }
-  .controls{
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 16px;
-    padding: 10px 14px;
-  }
-  kbd{
-    font-family: ui-monospace, monospace;
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 7px;
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(0,0,0,.25);
-    color: var(--ink);
-  }
-
-  .site-link{ pointer-events:auto; font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
   .site-link a{
-    color: rgba(200,220,255,.65);
-    text-decoration: none;
-    border-bottom: 1px solid rgba(200,220,255,.25);
-    padding-bottom: 2px;
+    color:rgba(200,220,255,.70);
+    text-decoration:none;
+    border-bottom:1px solid rgba(200,220,255,.28);
+    padding-bottom:2px;
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,.55));
   }
   .site-link a:hover{
-    color: rgba(255,255,255,.9);
-    border-bottom-color: rgba(255,255,255,.6);
-  }
-
-  .fx{
-    position:fixed; inset:0; pointer-events:none;
-    background:
-      radial-gradient(1200px 900px at 50% 45%, transparent 44%, rgba(0,0,0,.55) 86%),
-      repeating-linear-gradient(180deg, rgba(255,255,255,.014) 0px, rgba(255,255,255,.014) 1px, transparent 2px, transparent 6px);
-    mix-blend-mode: overlay;
-    opacity: .55;
+    color:rgba(255,255,255,.92);
+    border-bottom-color:rgba(255,255,255,.65);
   }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-
-<div class="hud">
-  <div class="header">
-    <div class="card">
-      <h1>Music Informatics · AI · Time–Frequency</h1>
-      <p>
-        Abstract flowfields suggesting waveforms and spectro-temporal energy —
-        smooth, dimensional, and quietly intelligent.
-      </p>
-    </div>
-    <div class="signature">Dr. Hideki Isoda</div>
-  </div>
-  <div></div>
-  <div class="footer">
-    <div class="controls">
-      <kbd>Space</kbd> pause · <kbd>R</kbd> reseed · <kbd>H</kbd> hide UI · <kbd>S</kbd> snapshot · move cursor to conduct
-    </div>
-    <div class="site-link">
-      <a href="https://hidekiisoda.com" target="_blank" rel="noopener">hidekiisoda.com</a>
-    </div>
-  </div>
+<div class="site-link">
+  <a href="https://hidekiisoda.com" target="_blank" rel="noopener">hidekiisoda.com</a>
 </div>
-<div class="fx"></div>
 
 <script>
 (() => {
   const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d", { alpha:true, desynchronized:true });
 
-  // ---- Resize / DPR
-  let W=0, H=0, DPR=1;
+  // --- WebGL setup (fast + smooth fractal animation)
+  const gl = canvas.getContext("webgl2", { antialias: false, alpha: false, desynchronized: true })
+        || canvas.getContext("webgl",  { antialias: false, alpha: false, desynchronized: true });
+
+  if (!gl) {
+    // Minimal fallback: static gradient (keeps page functional)
+    const ctx = canvas.getContext("2d");
+    const resize = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(innerWidth * dpr);
+      canvas.height = Math.floor(innerHeight * dpr);
+      canvas.style.width = innerWidth + "px";
+      canvas.style.height = innerHeight + "px";
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      const g = ctx.createRadialGradient(innerWidth*0.35, innerHeight*0.25, 0, innerWidth*0.5, innerHeight*0.5, Math.max(innerWidth,innerHeight));
+      g.addColorStop(0, "#141a3a"); g.addColorStop(0.45, "#0b0f22"); g.addColorStop(1, "#05060a");
+      ctx.fillStyle = g; ctx.fillRect(0,0,innerWidth,innerHeight);
+    };
+    addEventListener("resize", resize, {passive:true}); resize();
+    return;
+  }
+
+  const isWebGL2 = (gl instanceof WebGL2RenderingContext);
+
+  const VERT = `
+    attribute vec2 aPos;
+    varying vec2 vUv;
+    void main(){
+      vUv = aPos*0.5 + 0.5;
+      gl_Position = vec4(aPos, 0.0, 1.0);
+    }
+  `;
+
+  // Smooth, animated fractal (Julia set) + fbm warping + audio-like interference sheets (abstract)
+  const FRAG = (isWebGL2 ? `#version 300 es
+    precision highp float;
+    out vec4 outColor;
+    in vec2 vUv;
+    uniform vec2 iResolution;
+    uniform float iTime;
+    uniform vec2 iMouse;
+  ` : `
+    precision highp float;
+    varying vec2 vUv;
+    uniform vec2 iResolution;
+    uniform float iTime;
+    uniform vec2 iMouse;
+  `) + `
+
+    // --- Hash / noise / fbm (fractal)
+    float hash21(vec2 p){
+      p = fract(p*vec2(123.34, 345.45));
+      p += dot(p, p+34.345);
+      return fract(p.x*p.y);
+    }
+
+    float noise(vec2 p){
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f*f*(3.0-2.0*f);
+      float a = hash21(i);
+      float b = hash21(i + vec2(1.0,0.0));
+      float c = hash21(i + vec2(0.0,1.0));
+      float d = hash21(i + vec2(1.0,1.0));
+      return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
+    }
+
+    float fbm(vec2 p){
+      float v = 0.0;
+      float a = 0.52;
+      mat2 m = mat2(1.62, 1.21, -1.21, 1.62);
+      for(int i=0;i<5;i++){
+        v += a * noise(p);
+        p = m*p + 0.11;
+        a *= 0.5;
+      }
+      return v;
+    }
+
+    mat2 rot(float a){
+      float s = sin(a), c = cos(a);
+      return mat2(c,-s,s,c);
+    }
+
+    // Smooth palette
+    vec3 palette(float t){
+      vec3 a = vec3(0.10, 0.12, 0.20);
+      vec3 b = vec3(0.55, 0.45, 0.75);
+      vec3 c = vec3(1.10, 1.00, 0.90);
+      vec3 d = vec3(0.20, 0.32, 0.55);
+      return a + b*cos(6.28318*(c*t + d));
+    }
+
+    // Julia fractal with smooth iteration count
+    float julia(vec2 z, vec2 c){
+      float it = 0.0;
+      float m2 = dot(z,z);
+      for(int i=0;i<140;i++){
+        // z = z^2 + c
+        z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+        m2 = dot(z,z);
+        if(m2 > 16.0){
+          it = float(i);
+          break;
+        }
+        it = float(i);
+      }
+      // smooth iteration
+      float mu = it;
+      if(m2 > 0.0){
+        mu = it - log2(log2(max(1.0001, m2)));
+      }
+      return mu;
+    }
+
+    void main(){
+      vec2 res = iResolution;
+      vec2 uv = (vUv*2.0 - 1.0);
+      uv.x *= res.x / res.y;
+
+      // Mouse: subtle steering, never jittery
+      vec2 m = (iMouse / max(res, vec2(1.0)));
+      vec2 steer = (m - 0.5) * vec2(0.35, 0.25);
+
+      float t = iTime;
+
+      // Global gentle zoom + rotation (kept smooth, not slow)
+      float zoom = 1.55 + 0.18*sin(t*0.55);
+      uv *= zoom;
+      uv = rot(0.22*sin(t*0.25) + 0.10*cos(t*0.17)) * uv;
+
+      // Fractal warp (fbm) for 3D-ish depth illusion
+      float w1 = fbm(uv*1.05 + vec2(0.0, t*0.22));
+      float w2 = fbm(uv*1.90 + vec2(t*0.12, 0.0));
+      vec2 warp = vec2(w1 - 0.5, w2 - 0.5);
+      uv += warp * (0.42 + 0.18*sin(t*0.35));
+
+      // Julia parameter c animates on a small loop (stable, smooth)
+      vec2 c = vec2(-0.745, 0.132);
+      c += 0.10*vec2(cos(t*0.38), sin(t*0.33));
+      c += steer*0.55;
+
+      float mu = julia(uv, c);
+
+      // Normalize
+      float n = mu / 52.0;                // iteration scale
+      float core = smoothstep(0.0, 1.0, n);
+
+      // Spectral “sheets” (abstract time-frequency vibe): banded interference, softened
+      float sheets = 0.0;
+      vec2 q = uv * 0.55;
+      q += 0.12*vec2(sin(t*0.35), cos(t*0.27));
+      float band = sin((q.y*9.0 + fbm(q*2.0)*2.0) + t*1.25);
+      float band2 = sin((q.x*6.0 + fbm(q*1.6)*2.2) - t*1.05);
+      sheets = 0.5 + 0.5*(band*0.65 + band2*0.35);
+      sheets = smoothstep(0.15, 0.92, sheets) * 0.85;
+
+      // Waveform-like ripples (subtle)
+      float rip = sin((length(uv)*2.0 + fbm(uv*1.3))*3.2 - t*1.35);
+      rip = 0.5 + 0.5*rip;
+      rip = pow(rip, 2.2);
+
+      // Color
+      vec3 col = palette(0.16 + 0.85*n + 0.12*w1);
+      col *= 0.55 + 0.65*sheets;
+      col += vec3(0.25,0.35,0.55) * rip * 0.35;
+
+      // Glow: emphasize edges where iteration changes
+      float edge = fwidth(mu) * 1.2;
+      float glow = exp(-8.0*abs(fract(mu*0.08) - 0.5));
+      glow *= (0.35 + 0.65*sheets);
+      col += glow * vec3(0.25,0.65,0.95) * 0.25;
+
+      // Depth-like vignette + fog
+      float v = smoothstep(1.35, 0.15, length((vUv*2.0-1.0)*vec2(res.x/res.y,1.0)));
+      col *= (0.70 + 0.55*v);
+
+      // Gentle dark floor
+      col = mix(vec3(0.02,0.02,0.04), col, 0.98);
+
+      // Dither to reduce banding (tiny)
+      float d = (hash21(gl_FragCoord.xy) - 0.5) / 255.0;
+      col += d;
+
+      ${isWebGL2 ? "outColor = vec4(col, 1.0);" : "gl_FragColor = vec4(col, 1.0);"}
+    }
+  `;
+
+  function compile(type, src){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+      console.error(gl.getShaderInfoLog(s));
+      gl.deleteShader(s);
+      return null;
+    }
+    return s;
+  }
+
+  function link(vs, fs){
+    const p = gl.createProgram();
+    gl.attachShader(p, vs);
+    gl.attachShader(p, fs);
+    gl.linkProgram(p);
+    if(!gl.getProgramParameter(p, gl.LINK_STATUS)){
+      console.error(gl.getProgramInfoLog(p));
+      gl.deleteProgram(p);
+      return null;
+    }
+    return p;
+  }
+
+  const vs = compile(gl.VERTEX_SHADER, VERT);
+  const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+  const prog = link(vs, fs);
+  gl.useProgram(prog);
+
+  // Fullscreen quad
+  const quad = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -1,-1,  1,-1, -1, 1,
+    -1, 1,  1,-1,  1, 1
+  ]), gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(prog, "aPos");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes  = gl.getUniformLocation(prog, "iResolution");
+  const uTime = gl.getUniformLocation(prog, "iTime");
+  const uMouse= gl.getUniformLocation(prog, "iMouse");
+
+  let DPR = 1, W=0, H=0;
   function resize(){
     DPR = Math.min(2, window.devicePixelRatio || 1);
-    W = Math.floor(innerWidth);
-    H = Math.floor(innerHeight);
-    canvas.width  = Math.floor(W * DPR);
-    canvas.height = Math.floor(H * DPR);
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-    ctx.setTransform(DPR,0,0,DPR,0,0);
+    W = Math.floor(innerWidth * DPR);
+    H = Math.floor(innerHeight * DPR);
+    canvas.width = W; canvas.height = H;
+    canvas.style.width = innerWidth + "px";
+    canvas.style.height = innerHeight + "px";
+    gl.viewport(0,0,W,H);
   }
   addEventListener("resize", resize, {passive:true});
   resize();
 
-  // ---- RNG
-  let seed = (Date.now() ^ (Math.random()*1e9)) >>> 0;
-  const rand = () => {
-    seed ^= seed << 13; seed >>>= 0;
-    seed ^= seed >> 17; seed >>>= 0;
-    seed ^= seed << 5;  seed >>>= 0;
-    return (seed>>>0) / 4294967296;
-  };
-  const r = (a,b)=> a + (b-a)*rand();
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const smooth=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+  // Mouse (smoothed)
+  let mx = innerWidth*0.5, my = innerHeight*0.5;
+  let smx = mx, smy = my;
+  addEventListener("pointermove", (e)=>{ mx=e.clientX; my=e.clientY; }, {passive:true});
 
-  // ---- Interaction (conducting)
-  let mx=W*0.55, my=H*0.48, mvx=0, mvy=0, down=false;
-  function pointer(x,y){
-    mvx = x-mx; mvy = y-my;
-    mx=x; my=y;
-  }
-  addEventListener("pointermove", e=>pointer(e.clientX,e.clientY), {passive:true});
-  addEventListener("pointerdown", e=>{down=true; pointer(e.clientX,e.clientY);}, {passive:true});
-  addEventListener("pointerup", ()=>{down=false;}, {passive:true});
-
-  // ---- Camera & projection (very gentle)
-  const cam = { x:0, y:0, z: 880, f: 720 };
-  function project(P){
-    const z = P.z + cam.z;
-    const inv = cam.f / Math.max(120, z);
-    return { x: W*0.5 + (P.x - cam.x)*inv, y: H*0.5 + (P.y - cam.y)*inv, s: inv, z };
-  }
-  function fog(z){
-    // 0..1 visibility
-    const near=260, far=1400;
-    return 1 - smooth(near, far, z);
-  }
-
-  // ---- Smooth 3D value-noise + curl-ish flow
-  // We use a compact 3D value noise (hash+fade+trilinear), then build a "curl-like" field
-  // via finite differences of two independent scalar noise fields.
-  function hash3(ix,iy,iz){
-    // integer hash -> [0,1)
-    let h = ix|0;
-    h = (h * 374761393 + iy*668265263) | 0;
-    h = (h ^ (h>>13)) | 0;
-    h = (h * 1274126177 + iz*362437) | 0;
-    h = (h ^ (h>>16)) | 0;
-    return ((h>>>0) / 4294967296);
-  }
-  const fade = (t)=> t*t*t*(t*(t*6-15)+10);
-  function noise3(x,y,z){
-    const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
-    const fx = x-ix, fy = y-iy, fz = z-iz;
-    const u = fade(fx), v = fade(fy), w = fade(fz);
-
-    const n000 = hash3(ix,iy,iz);
-    const n100 = hash3(ix+1,iy,iz);
-    const n010 = hash3(ix,iy+1,iz);
-    const n110 = hash3(ix+1,iy+1,iz);
-    const n001 = hash3(ix,iy,iz+1);
-    const n101 = hash3(ix+1,iy,iz+1);
-    const n011 = hash3(ix,iy+1,iz+1);
-    const n111 = hash3(ix+1,iy+1,iz+1);
-
-    const nx00 = n000*(1-u) + n100*u;
-    const nx10 = n010*(1-u) + n110*u;
-    const nx01 = n001*(1-u) + n101*u;
-    const nx11 = n011*(1-u) + n111*u;
-
-    const nxy0 = nx00*(1-v) + nx10*v;
-    const nxy1 = nx01*(1-v) + nx11*v;
-
-    return nxy0*(1-w) + nxy1*w; // 0..1
-  }
-
-  function curlField(x,y,z,t){
-    // scale coordinates into noise domain
-    const s = 0.0065;
-    const tt = t*0.12;
-
-    // two noise fields for smoother "curl-like" direction
-    const a = (noise3(x*s+17.2, y*s-3.1, z*s+tt) - 0.5);
-    const b = (noise3(x*s-9.7,  y*s+11.4, z*s-tt) - 0.5);
-    const c = (noise3(x*s+2.9,  y*s+6.6,  z*s+tt*0.8) - 0.5);
-
-    // finite differences (gentle)
-    const e = 18; // larger step = smoother derivatives
-    const ax = (noise3((x+e)*s+17.2, y*s-3.1, z*s+tt) - noise3((x-e)*s+17.2, y*s-3.1, z*s+tt));
-    const ay = (noise3(x*s+17.2, (y+e)*s-3.1, z*s+tt) - noise3(x*s+17.2, (y-e)*s-3.1, z*s+tt));
-    const az = (noise3(x*s+17.2, y*s-3.1, (z+e)*s+tt) - noise3(x*s+17.2, y*s-3.1, (z-e)*s+tt));
-
-    const bx = (noise3((x+e)*s-9.7, y*s+11.4, z*s-tt) - noise3((x-e)*s-9.7, y*s+11.4, z*s-tt));
-    const by = (noise3(x*s-9.7, (y+e)*s+11.4, z*s-tt) - noise3(x*s-9.7, (y-e)*s+11.4, z*s-tt));
-    const bz = (noise3(x*s-9.7, y*s+11.4, (z+e)*s-tt) - noise3(x*s-9.7, y*s+11.4, (z-e)*s-tt));
-
-    // "curl-like": cross gradients to get swirling flow
-    let vx = (ay*bz - az*by);
-    let vy = (az*bx - ax*bz);
-    let vz = (ax*by - ay*bx);
-
-    // normalize + bias with c for musical “phrasing”
-    const m = Math.hypot(vx,vy,vz) + 1e-6;
-    vx = vx/m + 0.22*a;
-    vy = vy/m + 0.22*b;
-    vz = vz/m + 0.22*c;
-
-    return { vx, vy, vz };
-  }
-
-  // ---- Particles (3D ribbons)
-  const PCOUNT = 1600;        // many particles, but very cheap strokes
-  const TRAIL = 9;            // stored history points per particle
-  const particles = [];
-
-  function init(){
-    particles.length = 0;
-    for(let i=0;i<PCOUNT;i++){
-      const p = {
-        x: r(-560,560),
-        y: r(-340,340),
-        z: r(-260,720),
-        hue: r(175,305),
-        w: r(0.6, 1.8),
-        s: r(0.8, 1.7),
-        hist: []
-      };
-      for(let k=0;k<TRAIL;k++) p.hist.push({x:p.x,y:p.y,z:p.z});
-      particles.push(p);
-    }
-  }
-  init();
-
-  // ---- Spectral “sheets” (abstract spectrogram planes)
-  const SHEETS = 5;
-
-  // ---- Render helpers
-  function strokeTrail(hist, hue, alpha, width){
-    // draw as a smooth polyline with subtle glow
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = `hsla(${hue}, 95%, 70%, 1)`;
-    ctx.lineWidth = width;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.shadowColor = `hsla(${hue}, 95%, 70%, 0.35)`;
-    ctx.shadowBlur = 16;
-
-    ctx.beginPath();
-    let started = false;
-    for(let i=0;i<hist.length;i++){
-      const pr = project(hist[i]);
-      if(!started){ ctx.moveTo(pr.x, pr.y); started=true; }
-      else ctx.lineTo(pr.x, pr.y);
-    }
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function softFillCircle(x,y,rad,hue,alpha){
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    const g = ctx.createRadialGradient(x,y,0, x,y, rad);
-    g.addColorStop(0, `hsla(${hue},95%,72%,0.9)`);
-    g.addColorStop(1, `hsla(${hue},95%,72%,0)`);
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x,y,rad,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // ---- Loop
-  let paused=false, showHUD=true;
-  let t0=performance.now(), last=t0;
-
-  // reduced motion: keep it smooth but slower
-  const reduceMotion = matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function frame(now){
-    requestAnimationFrame(frame);
-    if(paused) return;
-
-    const rawDt = Math.min(0.033, (now-last)/1000);
-    last = now;
-    const dt = reduceMotion ? rawDt*0.45 : rawDt;
-
-    const t = (now - t0)/1000;
-    const conduct = down ? 1.0 : 0.55;
-    const energy = clamp(Math.hypot(mvx,mvy)/70, 0, 1) * conduct;
-
-    // Camera: very subtle breathing/orbit (kept smooth)
-    cam.x = Math.sin(t*0.10) * 70 * (0.4 + 0.6*energy);
-    cam.y = Math.cos(t*0.08) * 40 * (0.4 + 0.6*energy);
-
-    // Long-exposure trails: clear gently
-    ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "rgba(4,6,10,0.075)";
-    ctx.fillRect(0,0,W,H);
-
-    // Global additive for luminous ink
-    ctx.globalCompositeOperation = "lighter";
-
-    // --- Abstract spectral sheets (implied spectrogram)
-    // A few translucent planes, warped by noise, moving in depth.
-    for(let s=0;s<SHEETS;s++){
-      const z0 = 120 + s*120 + 40*Math.sin(t*0.16 + s);
-      const hue = 185 + s*22 + 18*Math.sin(t*0.10 + s*2.0);
-      const alpha = (0.012 + 0.016*(1 - s/(SHEETS-1))) * (0.7 + 0.6*energy);
-
-      // Draw as a soft ribbon band across X with noise-warped Y, projected from 3D
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = `hsla(${hue}, 95%, 70%, 1)`;
-      ctx.lineWidth = 1.1;
-      ctx.shadowColor = `hsla(${hue},95%,70%,0.25)`;
-      ctx.shadowBlur = 18;
-      ctx.beginPath();
-
-      let started=false;
-      for(let i=0;i<=220;i++){
-        const u = i/220;
-        const x = (u*2-1)*620;
-
-        // "time-frequency energy" warp
-        const ny = noise3(x*0.006 + 8.0, s*12.0, z0*0.008 + t*0.10);
-        const ny2 = noise3(x*0.004 - 3.0, s*7.0, z0*0.010 - t*0.08);
-        const y = (ny-0.5)*220 + (ny2-0.5)*110 + (my/H - 0.5)*90*energy;
-
-        const P = project({x, y, z: z0});
-        if(!started){ ctx.moveTo(P.x,P.y); started=true; }
-        else ctx.lineTo(P.x,P.y);
-      }
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // --- Particle ribbons advected by smooth 3D curl field
-    const target = {
-      x: (mx/W - 0.5) * 280,
-      y: (my/H - 0.5) * 190,
-      z: 260 + 220*(0.5 - my/H)
-    };
-
-    for(const p of particles){
-      // flow
-      const f = curlField(p.x, p.y, p.z, t);
-      const sp = p.s * (0.75 + 0.55*energy);
-
-      // gentle "conducting" attraction (kept soft to avoid jitter)
-      const dx = target.x - p.x;
-      const dy = target.y - p.y;
-      const dz = target.z - p.z;
-      const d = Math.hypot(dx,dy,dz) + 1e-6;
-      const pull = smooth(900, 220, d) * (0.10 + 0.22*energy) * conduct;
-
-      // integrate
-      p.x += (f.vx*160*dt*sp + (dx/d)*pull*110*dt);
-      p.y += (f.vy*160*dt*sp + (dy/d)*pull*110*dt);
-      p.z += (f.vz*160*dt*sp + (dz/d)*pull*110*dt);
-
-      // wrap in a 3D volume
-      if(p.x < -720) p.x = 720; else if(p.x > 720) p.x = -720;
-      if(p.y < -460) p.y = 460; else if(p.y > 460) p.y = -460;
-      if(p.z < -360) p.z = 760; else if(p.z > 760) p.z = -360;
-
-      // update trail history (shift oldest)
-      p.hist.pop();
-      p.hist.unshift({x:p.x, y:p.y, z:p.z});
-
-      // draw trail with depth-aware alpha
-      const head = project(p.hist[0]);
-      const vis = fog(head.z);
-      const a = (0.010 + 0.028*vis) * (0.7 + 0.8*energy);
-      const w = clamp(p.w * (0.7 + head.s*1.6), 0.45, 2.6);
-
-      // hue gently modulated by depth + time (very smooth)
-      const hue = p.hue + 18*Math.sin(t*0.10 + p.z*0.006);
-
-      strokeTrail(p.hist, hue, a, w);
-
-      // occasional soft “grain bloom” (very subtle)
-      if((p.hue|0) % 37 === 0){
-        softFillCircle(head.x, head.y, 18*(0.5+head.s), hue, a*0.22);
-      }
-    }
-
-    // --- Central halo (quiet, not flashy)
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    const haloA = 0.012 + 0.08*energy;
-    const g = ctx.createRadialGradient(mx,my, 0, mx,my, 320);
-    g.addColorStop(0, `rgba(255,255,255,${haloA})`);
-    g.addColorStop(0.26, `rgba(120,255,240,${haloA*0.55})`);
-    g.addColorStop(0.62, `rgba(180,120,255,${haloA*0.40})`);
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(mx,my, 320, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // ---- Init background
-  ctx.fillStyle = "rgba(4,6,10,1)";
-  ctx.fillRect(0,0,W,H);
-  requestAnimationFrame(frame);
-
-  // ---- Controls
+  // Controls (optional, no text shown)
   addEventListener("keydown", (e)=>{
     const k = e.key.toLowerCase();
-    if(k===" "){ e.preventDefault(); paused=!paused; }
-    else if(k==="r"){ seed = (Date.now() ^ (Math.random()*1e9))>>>0; init(); }
-    else if(k==="h"){
-      showHUD = !showHUD;
-      document.querySelector(".hud").style.display = showHUD ? "grid" : "none";
-    } else if(k==="s"){
-      try{
-        const a=document.createElement("a");
-        a.download="music-informatics-abstract-flow.png";
-        a.href=canvas.toDataURL("image/png");
-        a.click();
-      }catch(_){}
+    if(k === "r"){
+      // quick re-seed by nudging time base (visual change, no heavy rebuild)
+      t0 = performance.now() - Math.random()*10000;
     }
   });
 
+  // Smooth animation timing
+  let t0 = performance.now();
+  function draw(now){
+    requestAnimationFrame(draw);
+
+    // Smooth mouse
+    smx += (mx - smx) * 0.09;
+    smy += (my - smy) * 0.09;
+
+    const t = (now - t0) / 1000;
+
+    gl.useProgram(prog);
+    gl.uniform2f(uRes, W, H);
+    gl.uniform1f(uTime, t);
+    gl.uniform2f(uMouse, smx * DPR, (innerHeight - smy) * DPR);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+  requestAnimationFrame(draw);
 })();
 </script>
 </body>
