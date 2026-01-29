@@ -40,7 +40,7 @@
     canvas.getContext("webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false }) ||
     canvas.getContext("experimental-webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false });
 
-  // If WebGL isn't available, keep the page functional (no extra text).
+  // Keep functional if WebGL is unavailable (no extra text).
   if (!gl) {
     const ctx = canvas.getContext("2d");
     const resize2D = () => {
@@ -51,7 +51,7 @@
       canvas.style.height = innerHeight+"px";
       ctx.setTransform(dpr,0,0,dpr,0,0);
       const g = ctx.createRadialGradient(innerWidth*0.35, innerHeight*0.25, 0, innerWidth*0.5, innerHeight*0.5, Math.max(innerWidth,innerHeight));
-      g.addColorStop(0, "#131a3a"); g.addColorStop(0.5, "#0a0f22"); g.addColorStop(1, "#05060a");
+      g.addColorStop(0, "#141b40"); g.addColorStop(0.55, "#0b1024"); g.addColorStop(1, "#05060a");
       ctx.fillStyle = g; ctx.fillRect(0,0,innerWidth,innerHeight);
     };
     addEventListener("resize", resize2D, {passive:true}); resize2D();
@@ -67,11 +67,11 @@
     }
   `;
 
-  // Fast, smooth, abstract fractal:
-  // - Julia set base (fractal)
-  // - fbm domain warp (fractal-on-fractal)
-  // - soft “spectral sheets” interference (implied time–frequency)
-  // - no harsh edges / no stutter
+  // More “beautiful”: nebula-like fractal with:
+  // - hybrid Mandelbrot/Julia (stable, smooth)
+  // - orbit trap highlights (fine luminous filaments)
+  // - domain-warped fbm (depth + softness)
+  // - subtle chroma split + glow
   const FRAG = `
     precision highp float;
     varying vec2 vUv;
@@ -79,7 +79,7 @@
     uniform float iTime;
     uniform vec2  iMouse;
 
-    // ---- hash / noise / fbm
+    // --- tiny hash/noise/fbm
     float hash12(vec2 p){
       vec3 p3 = fract(vec3(p.xyx) * 0.1031);
       p3 += dot(p3, p3.yzx + 33.33);
@@ -91,54 +91,70 @@
       vec2 f = fract(p);
       f = f*f*(3.0-2.0*f);
       float a = hash12(i);
-      float b = hash12(i + vec2(1.0, 0.0));
-      float c = hash12(i + vec2(0.0, 1.0));
-      float d = hash12(i + vec2(1.0, 1.0));
+      float b = hash12(i + vec2(1.0,0.0));
+      float c = hash12(i + vec2(0.0,1.0));
+      float d = hash12(i + vec2(1.0,1.0));
       return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
     }
 
     float fbm(vec2 p){
       float v = 0.0;
       float a = 0.55;
-      mat2 m = mat2(1.62, 1.22, -1.22, 1.62);
+      mat2 m = mat2(1.62,1.18,-1.18,1.62);
       for(int i=0;i<6;i++){
         v += a * noise(p);
-        p = m*p + 0.13;
+        p = m*p + 0.11;
         a *= 0.5;
       }
       return v;
     }
 
     mat2 rot(float a){
-      float s=sin(a), c=cos(a);
+      float s = sin(a), c = cos(a);
       return mat2(c,-s,s,c);
     }
 
-    vec3 palette(float t){
-      // smooth neon-aurora palette
-      vec3 a = vec3(0.08, 0.10, 0.16);
-      vec3 b = vec3(0.55, 0.40, 0.70);
-      vec3 c = vec3(1.05, 1.00, 0.90);
-      vec3 d = vec3(0.20, 0.35, 0.55);
+    // Inigo Quilez-ish palette (soft, high-end)
+    vec3 pal(float t, vec3 a, vec3 b, vec3 c, vec3 d){
       return a + b*cos(6.28318*(c*t + d));
     }
 
-    // ---- Julia set (smooth iteration count)
-    float julia(vec2 z, vec2 c){
+    // Hybrid fractal: returns (smooth iters, trap)
+    vec2 hybridFractal(vec2 z0, vec2 cM, vec2 cJ){
+      vec2 z = z0;
       float m2 = dot(z,z);
       float it = 0.0;
-      for(int i=0;i<120;i++){
+
+      // orbit trap: distance to a moving line + circle
+      float trap = 1e9;
+      vec2 lineN = normalize(vec2(0.8 + 0.2*sin(iTime*0.25), 0.6 + 0.2*cos(iTime*0.21)));
+      float lineD = 0.15 + 0.08*sin(iTime*0.17);
+
+      for(int i=0;i<140;i++){
+        // blend Mandelbrot and Julia behavior smoothly
+        vec2 c = mix(cM, cJ, 0.52 + 0.48*sin(iTime*0.12));
         z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+
+        // orbit trap update
+        float dl = abs(dot(z, lineN) - lineD);
+        float dc = abs(length(z) - (0.55 + 0.10*sin(iTime*0.33)));
+        trap = min(trap, min(dl, dc));
+
         m2 = dot(z,z);
-        if(m2 > 16.0){ it = float(i); break; }
+        if(m2 > 64.0){
+          it = float(i);
+          break;
+        }
         it = float(i);
       }
-      // smooth
+
+      // smooth iteration count
       float mu = it;
       if(m2 > 0.0){
         mu = it - log2(log2(max(1.0001, m2)));
       }
-      return mu;
+
+      return vec2(mu, trap);
     }
 
     void main(){
@@ -146,67 +162,101 @@
       vec2 uv = vUv*2.0 - 1.0;
       uv.x *= res.x / max(1.0, res.y);
 
-      // Smoothed mouse steering (passed in already smoothed)
+      // smoothed mouse steering
       vec2 m = iMouse / max(res, vec2(1.0));
-      vec2 steer = (m - 0.5) * vec2(0.40, 0.28);
+      vec2 steer = (m - 0.5) * vec2(0.55, 0.36);
 
       float t = iTime;
 
-      // Make motion *clearly* dynamic but still silky
-      float baseRot = 0.12*sin(t*0.55) + 0.08*cos(t*0.37);
-      uv = rot(baseRot) * uv;
+      // Camera-ish motion (smooth, not slow)
+      float r0 = 0.10*sin(t*0.75) + 0.06*cos(t*0.53);
+      uv = rot(r0) * uv;
 
-      // Gentle zoom breathing
-      float zoom = 1.45 + 0.22*sin(t*0.60);
-      uv *= zoom;
+      // “Beauty” comes from layered warps + coherent motion
+      float zoom = 1.18 + 0.16*sin(t*0.55);
+      vec2 p = uv * zoom;
 
-      // Domain warp using fbm (this is the “abstract smooth 3D-ish” feel)
-      vec2 p = uv;
-      float wA = fbm(p*1.10 + vec2(0.10*t, -0.06*t));
-      float wB = fbm(p*2.00 + vec2(-0.07*t, 0.09*t));
-      vec2 warp = vec2(wA - 0.5, wB - 0.5);
-      uv += warp * (0.52 + 0.18*sin(t*0.40));
+      // Fractal-on-fractal domain warp (adds depth + softness)
+      float w1 = fbm(p*1.10 + vec2( 0.14*t, -0.09*t));
+      float w2 = fbm(p*2.10 + vec2(-0.10*t,  0.12*t));
+      vec2 warp = vec2(w1-0.5, w2-0.5);
+      p += warp * (0.62 + 0.14*sin(t*0.40));
 
-      // Julia parameter: stable loop + steer
-      vec2 c = vec2(-0.74, 0.14);
-      c += 0.12*vec2(cos(t*0.85), sin(t*0.77));
-      c += steer*0.65;
+      // A second warp layer (subtle) for “volumetric” feel
+      vec2 p2 = p + 0.25*vec2(sin(t*0.25), cos(t*0.22));
+      float w3 = fbm(p2*3.0 + vec2(0.07*t, -0.06*t));
+      p += (w3-0.5) * vec2(0.22, -0.18);
 
-      float mu = julia(uv, c);
-      float n = mu / 48.0;              // normalize-ish
-      n = clamp(n, 0.0, 1.0);
+      // Fractal parameters
+      vec2 cM = vec2(-0.72, 0.12) + 0.10*vec2(cos(t*0.32), sin(t*0.28)) + steer*0.55;
+      vec2 cJ = vec2(-0.18, 0.66) + 0.12*vec2(cos(t*0.41), sin(t*0.36)) - steer*0.40;
 
-      // “Spectral sheets” interference (soft, not stripey)
-      vec2 q = p*0.70 + warp*0.35;
-      float s1 = sin(q.y*7.5 + fbm(q*1.8)*2.0 + t*2.2);
-      float s2 = sin(q.x*5.8 + fbm(q*1.4)*2.2 - t*1.9);
-      float sheets = 0.5 + 0.5*(s1*0.65 + s2*0.35);
-      sheets = smoothstep(0.18, 0.92, sheets);
+      // Chromatic micro-shift (subtle)
+      vec2 ca = 0.006 * vec2(cos(t*0.6), sin(t*0.55));
+      vec2 frA = hybridFractal(p + ca, cM, cJ);
+      vec2 frB = hybridFractal(p,      cM, cJ);
+      vec2 frC = hybridFractal(p - ca, cM, cJ);
 
-      // Subtle radial “waveform” ripples
-      float rr = length(p);
-      float rip = 0.5 + 0.5*sin((rr*2.4 + fbm(p*1.2))*3.6 - t*2.4);
-      rip = pow(rip, 2.3);
+      float mu = frB.x;
+      float n  = clamp(mu / 56.0, 0.0, 1.0);
 
-      // Color composition
-      vec3 col = palette(0.18 + 0.95*n + 0.10*wA);
-      col *= (0.60 + 0.70*sheets);
-      col += vec3(0.20, 0.38, 0.65) * rip * 0.28;
+      // Trap glow (filaments)
+      float trap = frB.y;
+      float fil  = exp(-18.0*trap);
+      fil *= (0.45 + 0.55*smoothstep(0.05, 1.0, n));
 
-      // Edge glow without harsh outlines
+      // Soft “spectral sheets” (implied spectrogram)
+      vec2 q = uv*0.90 + warp*0.45;
+      float sh1 = sin(q.y*7.2 + fbm(q*1.8)*2.4 + t*2.8);
+      float sh2 = sin(q.x*5.4 + fbm(q*1.4)*2.0 - t*2.4);
+      float sheets = 0.5 + 0.5*(sh1*0.62 + sh2*0.38);
+      sheets = smoothstep(0.18, 0.96, sheets);
+
+      // “Waveform” rings (very gentle)
+      float rr = length(uv);
+      float rings = 0.5 + 0.5*sin((rr*2.2 + fbm(uv*1.2))*3.8 - t*2.9);
+      rings = pow(rings, 2.6);
+
+      // Color: three-channel n for gentle chroma depth
+      float nR = clamp(frA.x / 56.0, 0.0, 1.0);
+      float nG = n;
+      float nB = clamp(frC.x / 56.0, 0.0, 1.0);
+
+      vec3 base = pal(
+        0.10 + 0.95*nG + 0.08*w1,
+        vec3(0.06,0.08,0.14),
+        vec3(0.62,0.44,0.82),
+        vec3(1.00,0.98,0.92),
+        vec3(0.18,0.30,0.52)
+      );
+
+      // Subtle per-channel shading (adds “3D” richness)
+      vec3 chan = vec3(nR, nG, nB);
+      base *= (0.78 + 0.22*chan);
+
+      // Nebula body
+      vec3 col = base;
+      col *= (0.55 + 0.70*sheets);
+      col += vec3(0.16,0.34,0.62) * rings * 0.22;
+
+      // Filament glow (the “pretty” part)
+      col += fil * vec3(0.35, 0.85, 1.10) * 0.32;
+      col += fil * fil * vec3(1.00, 0.70, 0.95) * 0.10;
+
+      // Smooth edge glow without harsh outlines
       float glow = exp(-7.0*abs(fract(mu*0.085) - 0.5));
-      col += glow * vec3(0.22, 0.62, 0.95) * (0.10 + 0.22*sheets);
+      col += glow * vec3(0.18,0.60,0.95) * (0.10 + 0.22*sheets);
 
-      // Vignette (depth / focus)
-      float v = smoothstep(1.45, 0.10, length((vUv*2.0-1.0)*vec2(res.x/max(1.0,res.y),1.0)));
-      col *= (0.72 + 0.55*v);
+      // Vignette / depth
+      float v = smoothstep(1.55, 0.08, length((vUv*2.0-1.0)*vec2(res.x/max(1.0,res.y),1.0)));
+      col *= (0.70 + 0.62*v);
 
-      // Subtle film dither
-      float d = (hash12(gl_FragCoord.xy) - 0.5) / 255.0;
+      // Gentle film grain (tiny)
+      float d = (hash12(gl_FragCoord.xy + t*17.0) - 0.5) / 255.0;
       col += d;
 
-      // Keep blacks rich
-      col = mix(vec3(0.02,0.02,0.04), col, 0.98);
+      // Rich blacks
+      col = mix(vec3(0.02,0.02,0.04), col, 0.985);
 
       gl_FragColor = vec4(col, 1.0);
     }
@@ -243,7 +293,6 @@
 
   const prog = link(vs, fs);
   if(!prog) return;
-
   gl.useProgram(prog);
 
   // Fullscreen quad
@@ -277,7 +326,7 @@
   addEventListener("resize", resize, {passive:true});
   resize();
 
-  // Mouse smoothing (this is what typically fixes “not smooth” feel)
+  // Mouse smoothing (keeps motion “silk”)
   let mx = innerWidth*0.5, my = innerHeight*0.5;
   let smx = mx, smy = my;
   addEventListener("pointermove", (e)=>{ mx=e.clientX; my=e.clientY; }, {passive:true});
@@ -287,18 +336,16 @@
   function draw(now){
     requestAnimationFrame(draw);
 
-    // time
-    const t = (now - t0) / 1000;
-
-    // smooth mouse (critically important)
+    // smooth mouse
     smx += (mx - smx) * 0.10;
     smy += (my - smy) * 0.10;
 
-    gl.useProgram(prog);
+    const t = (now - t0) / 1000;
+
     gl.uniform2f(uRes, w, h);
     gl.uniform1f(uTime, t);
 
-    // Note: flip Y for intuitive interaction
+    // Flip Y for intuitive feel
     gl.uniform2f(uMouse, smx * DPR, (innerHeight - smy) * DPR);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
