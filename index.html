@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark" />
 <title>Dr. Hideki Isoda</title>
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#0a0a0c;}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0b0f;}
   canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;}
   .site-link{
     position:fixed; right:18px; bottom:16px; z-index:10;
@@ -36,62 +36,97 @@
 <script>
 (() => {
   const canvas = document.getElementById("c");
-  const gl =
-    canvas.getContext("webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false }) ||
-    canvas.getContext("experimental-webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false });
 
-  // Fallback: 2D many wave lines (still grayscale)
-  if(!gl){
-    const ctx = canvas.getContext("2d");
+  // ---------- Always-works 2D fallback (also used if WebGL shader fails)
+  function start2D(){
+    const ctx = canvas.getContext("2d", { alpha:false });
     let W=0,H=0,DPR=1;
-    function resize(){
-      DPR = Math.min(2, devicePixelRatio||1);
-      W = innerWidth; H = innerHeight;
-      canvas.width = Math.floor(W*DPR);
-      canvas.height = Math.floor(H*DPR);
-      canvas.style.width = W+"px";
-      canvas.style.height = H+"px";
-      ctx.setTransform(DPR,0,0,DPR,0,0);
-    }
-    addEventListener("resize", resize, {passive:true}); resize();
 
-    let t0=performance.now();
+    function resize(){
+      DPR = Math.min(2, devicePixelRatio || 1);
+      W = innerWidth; H = innerHeight;
+      canvas.width  = Math.floor(W*DPR);
+      canvas.height = Math.floor(H*DPR);
+      canvas.style.width  = W + "px";
+      canvas.style.height = H + "px";
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.fillStyle = "#0b0b0f";
+      ctx.fillRect(0,0,W,H);
+    }
+    addEventListener("resize", resize, {passive:true});
+    resize();
+
+    let t0 = performance.now();
+
     function draw(now){
       requestAnimationFrame(draw);
-      const t=(now-t0)/1000;
+      const t = (now - t0)/1000;
 
-      ctx.fillStyle = "rgba(10,10,12,0.16)";
+      // Slight persistence for smooth motion blur
+      ctx.fillStyle = "rgba(11,11,15,0.16)";
       ctx.fillRect(0,0,W,H);
 
-      ctx.globalCompositeOperation="lighter";
-      const lines = 120;
+      ctx.globalCompositeOperation = "lighter";
+
+      const lines = 160;            // "many many"
+      const xStep = 3;
+
       for(let i=0;i<lines;i++){
-        const y0 = (i/(lines-1))*H;
-        const f = 0.6 + Math.pow(i/(lines-1), 2.2) * 18.0; // low->high
-        const a = (0.6 + 0.4*Math.sin(t*0.6 + i*0.2)) * (8 + 34*(1 - Math.abs(i/(lines-1)-0.5)*1.6));
-        const ph = t*(0.7 + i*0.008);
+        const k = i/(lines-1);      // 0..1 low->high mapping
+        const y0 = k * H;
+
+        // frequency mapping (low to high)
+        const f = 0.7 + Math.pow(k, 2.25) * 26.0;
+
+        // amplitude envelope: larger around mid, smaller at extremes
+        const mid = 1 - Math.abs(k - 0.5)*2;
+        let amp = 6 + 30*Math.pow(Math.max(0, mid), 0.85);
+        amp *= (0.72 + 0.28*Math.sin(t*0.55 + i*0.11)); // slow breathing
+
+        // phase drift (different speeds)
+        const ph = t*(0.75 + f*0.06) + i*0.21;
 
         ctx.beginPath();
-        for(let x=0;x<=W;x+=3){
-          const u=x/W;
+        for(let x=0; x<=W; x+=xStep){
+          const u = x/W;
+
+          // several partials (low/mid/high) for each band
           const s =
-            Math.sin((u*6.28318)*f + ph) * a*0.38 +
-            Math.sin((u*6.28318)*(f*1.9) - ph*0.7) * a*0.18 +
-            Math.sin((u*6.28318)*(f*0.55) + ph*1.2) * a*0.12;
+            Math.sin((u*6.283185)*f        + ph)        * amp*0.42 +
+            Math.sin((u*6.283185)*(f*1.9)  - ph*0.72)   * amp*0.18 +
+            Math.sin((u*6.283185)*(f*0.55) + ph*1.15)   * amp*0.12 +
+            Math.sin((u*6.283185)*(f*3.1)  + ph*0.33)   * amp*0.08;
+
           const y = y0 + s;
           if(x===0) ctx.moveTo(x,y);
           else ctx.lineTo(x,y);
         }
-        const g = Math.floor(180 + 60*Math.sin(i*0.07 + t*0.25));
-        ctx.strokeStyle = `rgba(${g},${g},${g},0.18)`;
+
+        // grayscale intensity: slightly brighter around mids
+        const g = Math.floor(150 + 90*Math.pow(Math.max(0, mid), 0.55));
+        ctx.strokeStyle = `rgba(${g},${g},${g},0.16)`;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
-      ctx.globalCompositeOperation="source-over";
+
+      // Soft “fog” lift to avoid crushed blacks
+      ctx.globalCompositeOperation = "source-over";
+      const grad = ctx.createRadialGradient(W*0.5,H*0.55, 0, W*0.5,H*0.55, Math.max(W,H)*0.75);
+      grad.addColorStop(0, "rgba(255,255,255,0.04)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,W,H);
     }
+
     requestAnimationFrame(draw);
-    return;
   }
+
+  // ---------- Try WebGL (faster / denser). If anything fails, fall back to 2D.
+  const gl =
+    canvas.getContext("webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false }) ||
+    canvas.getContext("experimental-webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false });
+
+  if(!gl){ start2D(); return; }
 
   const VERT = `
     attribute vec2 aPos;
@@ -102,133 +137,124 @@
     }
   `;
 
-  // Grayscale: many waveform “traces” across the screen.
-  // We render an analytic field made of:
-  // - dozens of horizontal bands (low->high frequency mapping by Y)
-  // - each band is a sum of several moving sinusoids with different amplitudes
-  // - a soft line kernel draws traces (like an oscilloscope stack)
-  //
-  // Fast + smooth in WebGL. No text besides your domain.
+  // NOTE: Avoid tanh() (not reliably available in WebGL1 GLSL ES 1.00 on some drivers).
   const FRAG = `
-    precision highp float;
+    precision mediump float;
     varying vec2 vUv;
     uniform vec2  iResolution;
     uniform float iTime;
 
     float hash12(vec2 p){
-      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-      p3 += dot(p3, p3.yzx + 33.33);
-      return fract((p3.x + p3.y) * p3.z);
+      p = fract(p*vec2(123.34, 345.45));
+      p += dot(p, p+34.345);
+      return fract(p.x*p.y);
     }
 
-    mat2 rot(float a){
-      float s = sin(a), c = cos(a);
-      return mat2(c,-s,s,c);
+    float noise(vec2 p){
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f*f*(3.0-2.0*f);
+      float a = hash12(i);
+      float b = hash12(i + vec2(1.0,0.0));
+      float c = hash12(i + vec2(0.0,1.0));
+      float d = hash12(i + vec2(1.0,1.0));
+      return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
     }
 
-    // Soft line kernel: returns brightness for distance d to a curve
+    float fbm(vec2 p){
+      float v = 0.0;
+      float a = 0.55;
+      mat2 m = mat2(1.62, 1.18, -1.18, 1.62);
+      for(int i=0;i<5;i++){
+        v += a * noise(p);
+        p = m*p + 0.12;
+        a *= 0.5;
+      }
+      return v;
+    }
+
     float lineKernel(float d, float w){
-      // sharper core + soft bloom
-      float core = exp(- (d*d) / (w*w));
-      float bloom = exp(- (d*d) / (w*w*18.0));
-      return core + 0.35*bloom;
+      float core = exp(-(d*d)/(w*w));
+      float bloom = exp(-(d*d)/(w*w*18.0));
+      return core + 0.30*bloom;
     }
 
-    // A single band waveform value at horizontal coordinate x and band id k
-    float waveSum(float x, float k, float t){
-      // base frequency increases with k (low->high)
-      float fk = mix(0.7, 28.0, pow(k, 2.1));
+    float softClip(float x){
+      // smooth, cheap saturator (replaces tanh)
+      return x / (1.0 + abs(x));
+    }
 
-      // multi-sine: fundamental + partials with moving phase & slight FM
-      float fm  = 0.25*sin(t*0.65 + k*9.0);
-      float ph0 = t*(0.85 + 0.08*fk) + k*3.3;
+    float waveSum(float x, float k, float t){
+      float fk = mix(0.7, 30.0, pow(k, 2.15));
+      float fm = 0.22*sin(t*0.75 + k*9.0);
+      float ph = t*(0.80 + 0.06*fk) + k*3.5;
 
       float s =
-        sin(6.28318*(x*fk)      + ph0 + fm) * 1.00 +
-        sin(6.28318*(x*fk*1.9)  - ph0*0.72) * 0.45 +
-        sin(6.28318*(x*fk*0.55) + ph0*1.15) * 0.30 +
-        sin(6.28318*(x*fk*3.1)  + ph0*0.33) * 0.18;
+        sin(6.28318*(x*fk)     + ph + fm) * 1.00 +
+        sin(6.28318*(x*fk*1.9) - ph*0.70) * 0.45 +
+        sin(6.28318*(x*fk*0.55)+ ph*1.12) * 0.30 +
+        sin(6.28318*(x*fk*3.1) + ph*0.33) * 0.18;
 
-      // gentle nonlinearity to keep it “organic”
-      s = tanh(s*0.9);
-
-      return s;
+      return softClip(s*0.9);
     }
 
     void main(){
       vec2 res = iResolution;
-      vec2 uv = vUv;
+      vec2 uv  = vUv;
 
-      // aspect-correct space for wave evaluation
-      float x = uv.x;
-      float y = uv.y;
+      float t = iTime;
 
-      // Number of waveform bands (stacked)
-      const float BANDS = 140.0;
+      // number of stacked traces
+      const float BANDS = 160.0;
 
-      // Compute which band we're near
-      float by = y * BANDS;
+      // local band index
+      float by = uv.y * BANDS;
       float bi = floor(by);
-      float bf = fract(by);
 
-      // We'll accumulate contributions from the nearest few bands for density
+      // mild x drift + fbm for “living” motion
+      float drift = 0.012*sin(t*0.35) + 0.010*cos(t*0.22);
+      float xw = uv.x + drift;
+      float nx = fbm(vec2(uv.x*2.0, uv.y*2.5) + vec2(t*0.10, -t*0.06));
+      xw += (nx - 0.5) * 0.010;
+
       float acc = 0.0;
 
-      // Global motion (smooth)
-      float t = iTime;
-      float drift = 0.015*sin(t*0.28) + 0.010*cos(t*0.21);
-      float xw = x + drift;
-
-      // Loop over neighboring bands (cheap: 5 bands)
+      // Only evaluate nearest 5 bands (fast)
       for(int j=-2; j<=2; j++){
         float jj = float(j);
         float b = clamp((bi + jj) / (BANDS - 1.0), 0.0, 1.0);
-
-        // band center Y
         float y0 = (floor(by) + jj + 0.5) / BANDS;
 
-        // amplitude envelope: larger in mids, smaller at extremes
         float mid = 1.0 - abs(b - 0.5)*2.0;
-        float amp = 0.006 + 0.020*pow(clamp(mid,0.0,1.0), 0.9);
-        amp *= 0.75 + 0.25*sin(t*0.55 + b*10.0);
+        float amp = 0.006 + 0.022*pow(clamp(mid,0.0,1.0), 0.85);
+        amp *= 0.78 + 0.22*sin(t*0.55 + b*10.0);
 
-        // waveform value (vertical offset)
-        float wv = waveSum(xw, b, t);
+        float wv  = waveSum(xw, b, t);
+        float wv2 = waveSum(xw + 0.002*sin(t*0.80 + b*12.0), b, t*1.03);
+        float yCurve = y0 + (wv*0.72 + wv2*0.28) * amp;
 
-        // slight “chorus” (phase-smear) for richness
-        float ch = 0.35*waveSum(xw + 0.002*sin(t*0.7 + b*12.0), b, t*1.03);
-        float yCurve = y0 + (wv*0.72 + ch*0.28) * amp;
+        float d = abs(uv.y - yCurve);
 
-        // distance to curve
-        float d = abs(y - yCurve);
-
-        // thickness: slightly thicker for low bands, thin for highs
-        float thickness = mix(0.0018, 0.0010, pow(b, 0.85));
-        thickness *= 1.0 + 0.35*(1.0-mid);
-
-        // brightness
+        float thickness = mix(0.0019, 0.0011, pow(b, 0.85));
         float br = lineKernel(d, thickness);
 
-        // per-band intensity: low->mid a bit brighter
-        float bandGain = 0.06 + 0.20*pow(mid, 0.75);
-        acc += br * bandGain;
+        float gain = 0.06 + 0.22*pow(mid, 0.75);
+        acc += br * gain;
       }
 
-      // Add ultra-fine “analysis texture” (very subtle)
-      float tex = hash12(gl_FragCoord.xy*0.7 + t*40.0) - 0.5;
-      acc += tex * 0.010;
+      // tiny grain to reduce banding
+      acc += (hash12(gl_FragCoord.xy + t*17.0)-0.5) * 0.010;
 
-      // Tone mapping to avoid clipping
-      float lum = 1.0 - exp(-acc * 1.55); // compress highlights
-      lum = pow(lum, 0.78);              // brighten midtones (grayscale)
+      // tone map + brighten midtones
+      float lum = 1.0 - exp(-acc * 1.60);
+      lum = pow(lum, 0.80);
 
-      // Gentle vignette (not dark; just focus)
-      vec2 p = (uv*2.0 - 1.0) * vec2(res.x/max(1.0,res.y), 1.0);
-      float v = smoothstep(2.2, 0.35, dot(p,p));
-      lum *= (0.86 + 0.20*v);
+      // very gentle vignette (keeps it clean, not dark)
+      vec2 p = (uv*2.0-1.0) * vec2(res.x/max(1.0,res.y), 1.0);
+      float v = smoothstep(2.2, 0.45, dot(p,p));
+      lum *= (0.88 + 0.18*v);
 
-      // Background lift so it's not crushed
-      lum = max(lum, 0.03);
+      lum = max(lum, 0.04);
 
       gl_FragColor = vec4(vec3(lum), 1.0);
     }
@@ -245,6 +271,7 @@
     }
     return s;
   }
+
   function link(vs, fs){
     const p = gl.createProgram();
     gl.attachShader(p, vs);
@@ -260,10 +287,11 @@
 
   const vs = compile(gl.VERTEX_SHADER, VERT);
   const fs = compile(gl.FRAGMENT_SHADER, FRAG);
-  if(!vs || !fs) return;
+  if(!vs || !fs){ start2D(); return; }
 
   const prog = link(vs, fs);
-  if(!prog) return;
+  if(!prog){ start2D(); return; }
+
   gl.useProgram(prog);
 
   // Fullscreen quad
@@ -281,7 +309,6 @@
   const uRes  = gl.getUniformLocation(prog, "iResolution");
   const uTime = gl.getUniformLocation(prog, "iTime");
 
-  // Resize
   let DPR=1, w=0, h=0;
   function resize(){
     DPR = Math.min(2, devicePixelRatio || 1);
@@ -295,6 +322,9 @@
   }
   addEventListener("resize", resize, {passive:true});
   resize();
+
+  gl.clearColor(0.04,0.04,0.06,1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
 
   let t0 = performance.now();
   function draw(now){
