@@ -1,11 +1,252 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Dr. Hideki Isoda</title>
-  </head>
-  <body>
-    <h1>Welcome</h1>
-    <p>This page is hosted on GitHub.</p>
-  </body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>Dr. Hideki Isoda</title>
+
+<style>
+:root{
+  --bg:#05060a;
+  --bg2:#070a12;
+  --ink:rgba(235,240,255,.92);
+  --sub:rgba(235,240,255,.62);
+  --line:rgba(255,255,255,.10);
+}
+
+html,body{
+  margin:0;
+  height:100%;
+  background:
+    radial-gradient(900px 700px at 20% 10%, #0c1430 0%, transparent 60%),
+    radial-gradient(900px 700px at 80% 15%, #2b1244 0%, transparent 60%),
+    radial-gradient(900px 700px at 60% 90%, #0c2a35 0%, transparent 65%),
+    linear-gradient(180deg,var(--bg),var(--bg2));
+  overflow:hidden;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+}
+
+canvas{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+  display:block;
+}
+
+/* HUD */
+.hud{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  padding:clamp(16px,2.2vw,30px);
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:20px;
+}
+
+.card{
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:14px 18px;
+  max-width:780px;
+}
+
+.card h1{
+  margin:0;
+  font-size:clamp(14px,1.9vw,18px);
+  letter-spacing:.12em;
+  font-weight:600;
+  color:var(--ink);
+  text-transform:uppercase;
+}
+
+.card p{
+  margin:8px 0 0;
+  font-size:clamp(12px,1.5vw,14px);
+  color:var(--sub);
+  line-height:1.4;
+}
+
+.signature{
+  color:var(--sub);
+  font-size:12px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  padding-top:6px;
+}
+
+/* Footer */
+.footer{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:16px;
+  font-size:12px;
+  color:var(--sub);
+}
+
+.footer .controls{
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:10px 14px;
+}
+
+kbd{
+  font-family:ui-monospace,monospace;
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:7px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.25);
+  color:var(--ink);
+}
+
+/* Personal link */
+.site-link{
+  pointer-events:auto;
+  font-size:11px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.site-link a{
+  color:rgba(200,220,255,.65);
+  text-decoration:none;
+  border-bottom:1px solid rgba(200,220,255,.25);
+  padding-bottom:2px;
+}
+
+.site-link a:hover{
+  color:rgba(255,255,255,.9);
+  border-bottom-color:rgba(255,255,255,.6);
+}
+
+/* Vignette */
+.fx{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(1200px 900px at 50% 45%, transparent 45%, rgba(0,0,0,.45) 85%);
+}
+</style>
+</head>
+
+<body>
+<canvas id="c"></canvas>
+
+<div class="hud">
+  <div class="header">
+    <div class="card">
+      <h1>Music Informatics · AI · Time–Frequency</h1>
+      <p>
+        An abstract motion study inspired by waveforms, spectrograms,
+        and computational models of music perception and intelligence.
+      </p>
+    </div>
+    <div class="signature">Dr. Hideki Isoda</div>
+  </div>
+
+  <div></div>
+
+  <div class="footer">
+    <div class="controls">
+      <kbd>Space</kbd> pause · <kbd>R</kbd> reseed · <kbd>H</kbd> hide UI ·
+      <kbd>S</kbd> snapshot · move cursor to conduct
+    </div>
+    <div class="site-link">
+      <a href="https://hidekiisoda.com" target="_blank" rel="noopener">
+        hidekiisoda.com
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="fx"></div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d",{desynchronized:true});
+
+  let W,H,DPR;
+  function resize(){
+    DPR=Math.min(2,window.devicePixelRatio||1);
+    W=innerWidth; H=innerHeight;
+    canvas.width=W*DPR; canvas.height=H*DPR;
+    canvas.style.width=W+"px";
+    canvas.style.height=H+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  addEventListener("resize",resize); resize();
+
+  let mx=W*.5,my=H*.5,paused=false,showHUD=true;
+  addEventListener("pointermove",e=>{mx=e.clientX;my=e.clientY});
+
+  const N=520;
+  const P=[...Array(N)].map(()=>({
+    x:Math.random()*W,
+    y:Math.random()*H,
+    a:Math.random()*Math.PI*2,
+    s:.2+Math.random()*.8,
+    h:180+Math.random()*120
+  }));
+
+  let t0=performance.now(),last=t0;
+  function loop(now){
+    requestAnimationFrame(loop);
+    if(paused)return;
+    const t=(now-t0)/1000;
+    ctx.fillStyle="rgba(4,6,10,.14)";
+    ctx.fillRect(0,0,W,H);
+
+    ctx.globalCompositeOperation="lighter";
+    for(const p of P){
+      const dx=p.x-mx,dy=p.y-my;
+      const d=Math.hypot(dx,dy)+.001;
+      p.a+=.002+.004*Math.sin(t+p.h);
+      p.x+=Math.cos(p.a)*p.s-(dx/d)*.05;
+      p.y+=Math.sin(p.a)*p.s-(dy/d)*.05;
+      if(p.x<0)p.x+=W;if(p.x>W)p.x-=W;
+      if(p.y<0)p.y+=H;if(p.y>H)p.y-=H;
+      ctx.fillStyle=`hsla(${p.h},95%,70%,.08)`;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,1.4,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation="source-over";
+  }
+  requestAnimationFrame(loop);
+
+  addEventListener("keydown",e=>{
+    if(e.key===" ") paused=!paused;
+    if(e.key==="h"||e.key==="H")
+      document.querySelector(".hud").style.display=
+        showHUD=!showHUD ? "none":"grid";
+    if(e.key==="r"||e.key==="R") location.reload();
+    if(e.key==="s"||e.key==="S"){
+      const a=document.createElement("a");
+      a.download="music-informatics.png";
+      a.href=canvas.toDataURL();
+      a.click();
+    }
+  });
+})();
+</script>
+</body>
 </html>
