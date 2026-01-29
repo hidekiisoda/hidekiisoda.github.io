@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark" />
 <title>Dr. Hideki Isoda</title>
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#031225;}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a0a0c;}
   canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;}
   .site-link{
     position:fixed; right:18px; bottom:16px; z-index:10;
@@ -15,15 +15,15 @@
     pointer-events:auto;
   }
   .site-link a{
-    color:rgba(245,250,255,.82);
+    color:rgba(240,240,245,.78);
     text-decoration:none;
-    border-bottom:1px solid rgba(245,250,255,.35);
+    border-bottom:1px solid rgba(240,240,245,.30);
     padding-bottom:2px;
-    filter: drop-shadow(0 10px 30px rgba(0,0,0,.45));
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,.55));
   }
   .site-link a:hover{
-    color:rgba(255,255,255,.98);
-    border-bottom-color:rgba(255,255,255,.75);
+    color:rgba(255,255,255,.95);
+    border-bottom-color:rgba(255,255,255,.65);
   }
 </style>
 </head>
@@ -40,25 +40,56 @@
     canvas.getContext("webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false }) ||
     canvas.getContext("experimental-webgl", { alpha:false, antialias:false, preserveDrawingBuffer:false });
 
-  // Functional fallback: bright ocean gradient (no extra text)
-  if (!gl) {
+  // Fallback: 2D many wave lines (still grayscale)
+  if(!gl){
     const ctx = canvas.getContext("2d");
-    const resize2D = () => {
-      const dpr = Math.min(2, devicePixelRatio || 1);
-      canvas.width = Math.floor(innerWidth*dpr);
-      canvas.height = Math.floor(innerHeight*dpr);
-      canvas.style.width = innerWidth+"px";
-      canvas.style.height = innerHeight+"px";
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      const g = ctx.createLinearGradient(0,0,0,innerHeight);
-      g.addColorStop(0, "#3fe6ff");
-      g.addColorStop(0.35, "#1fb4ff");
-      g.addColorStop(0.7, "#0b4d9f");
-      g.addColorStop(1, "#031225");
-      ctx.fillStyle = g;
-      ctx.fillRect(0,0,innerWidth,innerHeight);
-    };
-    addEventListener("resize", resize2D, {passive:true}); resize2D();
+    let W=0,H=0,DPR=1;
+    function resize(){
+      DPR = Math.min(2, devicePixelRatio||1);
+      W = innerWidth; H = innerHeight;
+      canvas.width = Math.floor(W*DPR);
+      canvas.height = Math.floor(H*DPR);
+      canvas.style.width = W+"px";
+      canvas.style.height = H+"px";
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    addEventListener("resize", resize, {passive:true}); resize();
+
+    let t0=performance.now();
+    function draw(now){
+      requestAnimationFrame(draw);
+      const t=(now-t0)/1000;
+
+      ctx.fillStyle = "rgba(10,10,12,0.16)";
+      ctx.fillRect(0,0,W,H);
+
+      ctx.globalCompositeOperation="lighter";
+      const lines = 120;
+      for(let i=0;i<lines;i++){
+        const y0 = (i/(lines-1))*H;
+        const f = 0.6 + Math.pow(i/(lines-1), 2.2) * 18.0; // low->high
+        const a = (0.6 + 0.4*Math.sin(t*0.6 + i*0.2)) * (8 + 34*(1 - Math.abs(i/(lines-1)-0.5)*1.6));
+        const ph = t*(0.7 + i*0.008);
+
+        ctx.beginPath();
+        for(let x=0;x<=W;x+=3){
+          const u=x/W;
+          const s =
+            Math.sin((u*6.28318)*f + ph) * a*0.38 +
+            Math.sin((u*6.28318)*(f*1.9) - ph*0.7) * a*0.18 +
+            Math.sin((u*6.28318)*(f*0.55) + ph*1.2) * a*0.12;
+          const y = y0 + s;
+          if(x===0) ctx.moveTo(x,y);
+          else ctx.lineTo(x,y);
+        }
+        const g = Math.floor(180 + 60*Math.sin(i*0.07 + t*0.25));
+        ctx.strokeStyle = `rgba(${g},${g},${g},0.18)`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation="source-over";
+    }
+    requestAnimationFrame(draw);
     return;
   }
 
@@ -71,16 +102,18 @@
     }
   `;
 
-  // BRIGHT ocean + waterfall spectrogram aesthetic:
-  // - domain-warped fbm waves (ocean motion)
-  // - flowing “waterfall” streaks (sound analysis vibe)
-  // - bright palette + bloom-ish highlights (without postprocess)
+  // Grayscale: many waveform “traces” across the screen.
+  // We render an analytic field made of:
+  // - dozens of horizontal bands (low->high frequency mapping by Y)
+  // - each band is a sum of several moving sinusoids with different amplitudes
+  // - a soft line kernel draws traces (like an oscilloscope stack)
+  //
+  // Fast + smooth in WebGL. No text besides your domain.
   const FRAG = `
     precision highp float;
     varying vec2 vUv;
     uniform vec2  iResolution;
     uniform float iTime;
-    uniform vec2  iMouse;
 
     float hash12(vec2 p){
       vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -88,140 +121,116 @@
       return fract((p3.x + p3.y) * p3.z);
     }
 
-    float noise(vec2 p){
-      vec2 i = floor(p);
-      vec2 f = fract(p);
-      f = f*f*(3.0-2.0*f);
-      float a = hash12(i);
-      float b = hash12(i + vec2(1.0,0.0));
-      float c = hash12(i + vec2(0.0,1.0));
-      float d = hash12(i + vec2(1.0,1.0));
-      return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
-    }
-
-    float fbm(vec2 p){
-      float v = 0.0;
-      float a = 0.55;
-      mat2 m = mat2(1.62, 1.18, -1.18, 1.62);
-      for(int i=0;i<6;i++){
-        v += a * noise(p);
-        p = m*p + 0.12;
-        a *= 0.5;
-      }
-      return v;
-    }
-
-    // Smooth ocean palette (bright)
-    vec3 oceanPal(float t){
-      // t in [0,1]
-      vec3 deep  = vec3(0.02, 0.10, 0.22);
-      vec3 mid   = vec3(0.05, 0.35, 0.80);
-      vec3 aqua  = vec3(0.20, 0.85, 0.95);
-      vec3 foam  = vec3(0.95, 0.98, 1.00);
-      vec3 c = mix(deep, mid, smoothstep(0.0, 0.55, t));
-      c = mix(c, aqua, smoothstep(0.35, 0.80, t));
-      c = mix(c, foam, smoothstep(0.78, 1.00, t));
-      return c;
-    }
-
     mat2 rot(float a){
       float s = sin(a), c = cos(a);
       return mat2(c,-s,s,c);
     }
 
+    // Soft line kernel: returns brightness for distance d to a curve
+    float lineKernel(float d, float w){
+      // sharper core + soft bloom
+      float core = exp(- (d*d) / (w*w));
+      float bloom = exp(- (d*d) / (w*w*18.0));
+      return core + 0.35*bloom;
+    }
+
+    // A single band waveform value at horizontal coordinate x and band id k
+    float waveSum(float x, float k, float t){
+      // base frequency increases with k (low->high)
+      float fk = mix(0.7, 28.0, pow(k, 2.1));
+
+      // multi-sine: fundamental + partials with moving phase & slight FM
+      float fm  = 0.25*sin(t*0.65 + k*9.0);
+      float ph0 = t*(0.85 + 0.08*fk) + k*3.3;
+
+      float s =
+        sin(6.28318*(x*fk)      + ph0 + fm) * 1.00 +
+        sin(6.28318*(x*fk*1.9)  - ph0*0.72) * 0.45 +
+        sin(6.28318*(x*fk*0.55) + ph0*1.15) * 0.30 +
+        sin(6.28318*(x*fk*3.1)  + ph0*0.33) * 0.18;
+
+      // gentle nonlinearity to keep it “organic”
+      s = tanh(s*0.9);
+
+      return s;
+    }
+
     void main(){
       vec2 res = iResolution;
       vec2 uv = vUv;
-      vec2 p = (uv*2.0 - 1.0);
-      p.x *= res.x / max(1.0,res.y);
 
-      // smoothed mouse steering (passed as smoothed)
-      vec2 m = iMouse / max(res, vec2(1.0));
-      vec2 steer = (m - 0.5);
+      // aspect-correct space for wave evaluation
+      float x = uv.x;
+      float y = uv.y;
 
+      // Number of waveform bands (stacked)
+      const float BANDS = 140.0;
+
+      // Compute which band we're near
+      float by = y * BANDS;
+      float bi = floor(by);
+      float bf = fract(by);
+
+      // We'll accumulate contributions from the nearest few bands for density
+      float acc = 0.0;
+
+      // Global motion (smooth)
       float t = iTime;
+      float drift = 0.015*sin(t*0.28) + 0.010*cos(t*0.21);
+      float xw = x + drift;
 
-      // --- Ocean surface field (domain warped)
-      vec2 q = p;
-      q = rot(0.06*sin(t*0.35)) * q;
+      // Loop over neighboring bands (cheap: 5 bands)
+      for(int j=-2; j<=2; j++){
+        float jj = float(j);
+        float b = clamp((bi + jj) / (BANDS - 1.0), 0.0, 1.0);
 
-      // warp for fluid motion
-      float wA = fbm(q*1.25 + vec2(0.18*t, -0.10*t));
-      float wB = fbm(q*2.20 + vec2(-0.14*t, 0.16*t));
-      vec2 warp = vec2(wA-0.5, wB-0.5);
-      q += warp * 0.85;
+        // band center Y
+        float y0 = (floor(by) + jj + 0.5) / BANDS;
 
-      // primary wave height (smooth)
-      float h1 = sin(q.x*2.2 + t*1.25);
-      float h2 = sin(q.x*3.8 - t*0.95 + warp.y*2.0);
-      float h3 = sin((q.x+q.y*0.35)*6.2 + t*1.65);
-      float height = 0.52 + 0.22*h1 + 0.16*h2 + 0.10*h3 + 0.30*(wA-0.5);
+        // amplitude envelope: larger in mids, smaller at extremes
+        float mid = 1.0 - abs(b - 0.5)*2.0;
+        float amp = 0.006 + 0.020*pow(clamp(mid,0.0,1.0), 0.9);
+        amp *= 0.75 + 0.25*sin(t*0.55 + b*10.0);
 
-      // "swell" increases toward bottom (like a waterfall spectrogram panel)
-      float swell = smoothstep(0.10, 1.0, uv.y);
-      height += swell * 0.18 * sin((q.y*3.2 - t*1.8) + warp.x*2.0);
+        // waveform value (vertical offset)
+        float wv = waveSum(xw, b, t);
 
-      // --- Waterfall / spectrogram streaks (vertical energy trails)
-      // Build vertical ridges with time flow, then soften.
-      vec2 s = q;
-      s.x += (wB-0.5) * 0.65;
-      float streakBase = sin((s.x*10.0 + fbm(s*2.4)*2.8) + t*2.6);
-      float streaks = 0.5 + 0.5*streakBase;
-      streaks = pow(streaks, 3.2);                  // thin bright ridges
-      streaks *= smoothstep(0.05, 0.95, uv.y);      // waterfall emerges downward
+        // slight “chorus” (phase-smear) for richness
+        float ch = 0.35*waveSum(xw + 0.002*sin(t*0.7 + b*12.0), b, t*1.03);
+        float yCurve = y0 + (wv*0.72 + ch*0.28) * amp;
 
-      // add micro streaks (finer analysis lines)
-      float micro = 0.5 + 0.5*sin((s.x*22.0 + fbm(s*4.2)*3.4) + t*4.2);
-      micro = pow(micro, 7.0) * 0.65;
+        // distance to curve
+        float d = abs(y - yCurve);
 
-      // --- Foam / highlight = where gradients change (pseudo-derivative)
-      float e = 0.0025;
-      float heightX = (0.52 + 0.22*sin((q.x+e)*2.2 + t*1.25)
-                      +0.16*sin((q.x+e)*3.8 - t*0.95 + warp.y*2.0)
-                      +0.10*sin(((q.x+e)+q.y*0.35)*6.2 + t*1.65)
-                      +0.30*(wA-0.5));
-      float slope = abs(heightX - height);
-      float foam = smoothstep(0.035, 0.12, slope);
-      foam += smoothstep(0.35, 0.98, streaks) * 0.65;
-      foam += micro * 0.45;
+        // thickness: slightly thicker for low bands, thin for highs
+        float thickness = mix(0.0018, 0.0010, pow(b, 0.85));
+        thickness *= 1.0 + 0.35*(1.0-mid);
 
-      // --- Shading: brighter overall
-      // Base brightness uses height + vertical light gradient
-      float light = 0.55 + 0.55*(1.0-uv.y) + 0.30*height;
-      // Cursor subtly “conducts” energy
-      float focus = exp(-4.8*dot(steer,steer));
-      light += focus * 0.18;
+        // brightness
+        float br = lineKernel(d, thickness);
 
-      // Color from height (ocean) + spectrogram streak energy
-      float tone = clamp(0.45 + 0.75*height + 0.55*streaks, 0.0, 1.0);
-      vec3 col = oceanPal(tone);
+        // per-band intensity: low->mid a bit brighter
+        float bandGain = 0.06 + 0.20*pow(mid, 0.75);
+        acc += br * bandGain;
+      }
 
-      // Add bright waterfall glow
-      col += vec3(0.20, 0.70, 0.95) * streaks * 0.55;
-      col += vec3(0.85, 0.95, 1.00) * micro * 0.30;
+      // Add ultra-fine “analysis texture” (very subtle)
+      float tex = hash12(gl_FragCoord.xy*0.7 + t*40.0) - 0.5;
+      acc += tex * 0.010;
 
-      // Foam highlights
-      col = mix(col, vec3(0.95,0.99,1.00), clamp(foam,0.0,1.0));
+      // Tone mapping to avoid clipping
+      float lum = 1.0 - exp(-acc * 1.55); // compress highlights
+      lum = pow(lum, 0.78);              // brighten midtones (grayscale)
 
-      // Subtle sunbeam gradient at top
-      vec3 sky = vec3(0.25, 0.95, 1.00);
-      float topGlow = smoothstep(0.0, 0.28, 1.0-uv.y);
-      col = mix(col, sky, topGlow * 0.20);
+      // Gentle vignette (not dark; just focus)
+      vec2 p = (uv*2.0 - 1.0) * vec2(res.x/max(1.0,res.y), 1.0);
+      float v = smoothstep(2.2, 0.35, dot(p,p));
+      lum *= (0.86 + 0.20*v);
 
-      // Contrast + brightness lift (avoid “too dark”)
-      col *= light;
-      col = pow(col, vec3(0.86)); // gamma lift -> brighter
+      // Background lift so it's not crushed
+      lum = max(lum, 0.03);
 
-      // Vignette (very light, keeps edges clean but not dark)
-      vec2 vv = (uv*2.0-1.0)*vec2(res.x/max(1.0,res.y),1.0);
-      float vig = smoothstep(1.7, 0.55, dot(vv,vv));
-      col *= (0.92 + 0.14*vig);
-
-      // Dither (tiny)
-      float d = (hash12(gl_FragCoord.xy + t*13.0)-0.5)/255.0;
-      col += d;
-
-      gl_FragColor = vec4(col, 1.0);
+      gl_FragColor = vec4(vec3(lum), 1.0);
     }
   `;
 
@@ -236,7 +245,6 @@
     }
     return s;
   }
-
   function link(vs, fs){
     const p = gl.createProgram();
     gl.attachShader(p, vs);
@@ -270,9 +278,8 @@
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-  const uRes   = gl.getUniformLocation(prog, "iResolution");
-  const uTime  = gl.getUniformLocation(prog, "iTime");
-  const uMouse = gl.getUniformLocation(prog, "iMouse");
+  const uRes  = gl.getUniformLocation(prog, "iResolution");
+  const uTime = gl.getUniformLocation(prog, "iTime");
 
   // Resize
   let DPR=1, w=0, h=0;
@@ -284,31 +291,17 @@
     canvas.height = h;
     canvas.style.width = innerWidth + "px";
     canvas.style.height = innerHeight + "px";
-    gl.viewport(0, 0, w, h);
+    gl.viewport(0,0,w,h);
   }
   addEventListener("resize", resize, {passive:true});
   resize();
 
-  // Mouse smoothing
-  let mx = innerWidth*0.5, my = innerHeight*0.5;
-  let smx = mx, smy = my;
-  addEventListener("pointermove", (e)=>{ mx=e.clientX; my=e.clientY; }, {passive:true});
-
   let t0 = performance.now();
   function draw(now){
     requestAnimationFrame(draw);
-
-    smx += (mx - smx) * 0.10;
-    smy += (my - smy) * 0.10;
-
-    const t = (now - t0) / 1000;
-
+    const t = (now - t0)/1000;
     gl.uniform2f(uRes, w, h);
     gl.uniform1f(uTime, t);
-
-    // flip Y
-    gl.uniform2f(uMouse, smx * DPR, (innerHeight - smy) * DPR);
-
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   requestAnimationFrame(draw);
