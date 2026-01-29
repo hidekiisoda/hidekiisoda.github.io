@@ -7,19 +7,17 @@
 <title>Dr. Hideki Isoda</title>
 <style>
   :root{
-    --bg:#05060a;
-    --bg2:#070a12;
-    --ink:rgba(235,240,255,.92);
-    --sub:rgba(235,240,255,.62);
-    --line:rgba(255,255,255,.10);
+    --ink: rgba(235,240,255,.92);
+    --sub: rgba(235,240,255,.62);
+    --line: rgba(255,255,255,.10);
   }
   html,body{
-    margin:0;height:100%;overflow:hidden;
+    margin:0; height:100%; overflow:hidden;
     background:
-      radial-gradient(900px 700px at 20% 10%, #0c1430 0%, transparent 60%),
-      radial-gradient(900px 700px at 80% 15%, #2b1244 0%, transparent 60%),
-      radial-gradient(900px 700px at 60% 90%, #0c2a35 0%, transparent 65%),
-      linear-gradient(180deg,var(--bg),var(--bg2));
+      radial-gradient(1200px 900px at 18% 12%, #0c1430 0%, transparent 62%),
+      radial-gradient(1100px 900px at 86% 18%, #2b1244 0%, transparent 62%),
+      radial-gradient(1000px 900px at 55% 92%, #0c2a35 0%, transparent 68%),
+      linear-gradient(180deg, #05060a, #070a12);
     font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
   }
   canvas{ position:fixed; inset:0; width:100vw; height:100vh; display:block; }
@@ -31,80 +29,78 @@
   }
   .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
   .card{
-    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-    background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
-    border:1px solid var(--line);
-    border-radius:18px; padding:14px 18px; max-width:820px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.015));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 14px 18px;
+    max-width: 860px;
     box-shadow: 0 18px 60px rgba(0,0,0,.35);
   }
   .card h1{
     margin:0;
-    font-size:clamp(14px,1.9vw,18px);
-    letter-spacing:.12em;
-    font-weight:650;
-    color:var(--ink);
-    text-transform:uppercase;
+    font-size: clamp(14px, 1.9vw, 18px);
+    letter-spacing: .12em;
+    font-weight: 650;
+    color: var(--ink);
+    text-transform: uppercase;
   }
   .card p{
-    margin:8px 0 0;
-    font-size:clamp(12px,1.5vw,14px);
-    color:var(--sub);
-    line-height:1.4;
+    margin: 8px 0 0;
+    font-size: clamp(12px, 1.5vw, 14px);
+    color: var(--sub);
+    line-height: 1.4;
   }
   .signature{
-    color:var(--sub);
-    font-size:12px;
-    letter-spacing:.1em;
-    text-transform:uppercase;
-    white-space:nowrap;
-    padding-top:6px;
+    color: var(--sub);
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding-top: 6px;
     filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
   }
 
   .footer{
     display:flex; justify-content:space-between; align-items:flex-end; gap:16px;
-    font-size:12px; color:var(--sub);
+    font-size: 12px; color: var(--sub);
   }
   .controls{
-    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:16px;
-    padding:10px 14px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding: 10px 14px;
   }
   kbd{
-    font-family:ui-monospace,monospace;
-    font-size:11px;
-    padding:2px 6px;
-    border-radius:7px;
-    border:1px solid rgba(255,255,255,.12);
-    background:rgba(0,0,0,.25);
-    color:var(--ink);
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.25);
+    color: var(--ink);
   }
 
   .site-link{ pointer-events:auto; font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
   .site-link a{
-    color:rgba(200,220,255,.65);
-    text-decoration:none;
-    border-bottom:1px solid rgba(200,220,255,.25);
-    padding-bottom:2px;
+    color: rgba(200,220,255,.65);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(200,220,255,.25);
+    padding-bottom: 2px;
   }
   .site-link a:hover{
-    color:rgba(255,255,255,.9);
-    border-bottom-color:rgba(255,255,255,.6);
+    color: rgba(255,255,255,.9);
+    border-bottom-color: rgba(255,255,255,.6);
   }
 
   .fx{
     position:fixed; inset:0; pointer-events:none;
     background:
-      radial-gradient(1200px 900px at 50% 45%, transparent 45%, rgba(0,0,0,.50) 85%),
-      repeating-linear-gradient(180deg, rgba(255,255,255,.016) 0px, rgba(255,255,255,.016) 1px, transparent 2px, transparent 5px);
+      radial-gradient(1200px 900px at 50% 45%, transparent 44%, rgba(0,0,0,.55) 86%),
+      repeating-linear-gradient(180deg, rgba(255,255,255,.014) 0px, rgba(255,255,255,.014) 1px, transparent 2px, transparent 6px);
     mix-blend-mode: overlay;
-    opacity:.55;
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    .controls::after{ content:"  (Reduced Motion)"; opacity:.7; }
+    opacity: .55;
   }
 </style>
 </head>
@@ -114,10 +110,10 @@
 <div class="hud">
   <div class="header">
     <div class="card">
-      <h1>Music Informatics · Waveforms · Spectrogram · AI</h1>
+      <h1>Music Informatics · AI · Time–Frequency</h1>
       <p>
-        A 3D-inspired motion study: time–frequency curtains, harmonic ribbons, and an embedding-like lattice —
-        conducted by your cursor.
+        Abstract flowfields suggesting waveforms and spectro-temporal energy —
+        smooth, dimensional, and quietly intelligent.
       </p>
     </div>
     <div class="signature">Dr. Hideki Isoda</div>
@@ -125,15 +121,13 @@
   <div></div>
   <div class="footer">
     <div class="controls">
-      <kbd>Space</kbd> pause · <kbd>R</kbd> reseed · <kbd>H</kbd> hide UI ·
-      <kbd>S</kbd> snapshot · move cursor to conduct
+      <kbd>Space</kbd> pause · <kbd>R</kbd> reseed · <kbd>H</kbd> hide UI · <kbd>S</kbd> snapshot · move cursor to conduct
     </div>
     <div class="site-link">
       <a href="https://hidekiisoda.com" target="_blank" rel="noopener">hidekiisoda.com</a>
     </div>
   </div>
 </div>
-
 <div class="fx"></div>
 
 <script>
@@ -141,34 +135,34 @@
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d", { alpha:true, desynchronized:true });
 
-  // ----- DPI / Resize
-  let W=0,H=0,DPR=1;
+  // ---- Resize / DPR
+  let W=0, H=0, DPR=1;
   function resize(){
     DPR = Math.min(2, window.devicePixelRatio || 1);
     W = Math.floor(innerWidth);
     H = Math.floor(innerHeight);
-    canvas.width = Math.floor(W*DPR);
-    canvas.height = Math.floor(H*DPR);
-    canvas.style.width = W+"px";
-    canvas.style.height = H+"px";
+    canvas.width  = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
     ctx.setTransform(DPR,0,0,DPR,0,0);
   }
   addEventListener("resize", resize, {passive:true});
   resize();
 
-  // ----- RNG (xorshift32) for deterministic reseed
+  // ---- RNG
   let seed = (Date.now() ^ (Math.random()*1e9)) >>> 0;
   const rand = () => {
     seed ^= seed << 13; seed >>>= 0;
     seed ^= seed >> 17; seed >>>= 0;
     seed ^= seed << 5;  seed >>>= 0;
-    return (seed>>>0)/4294967296;
+    return (seed>>>0) / 4294967296;
   };
   const r = (a,b)=> a + (b-a)*rand();
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const smooth=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
 
-  // ----- Interaction
+  // ---- Interaction (conducting)
   let mx=W*0.55, my=H*0.48, mvx=0, mvy=0, down=false;
   function pointer(x,y){
     mvx = x-mx; mvy = y-my;
@@ -178,360 +172,307 @@
   addEventListener("pointerdown", e=>{down=true; pointer(e.clientX,e.clientY);}, {passive:true});
   addEventListener("pointerup", ()=>{down=false;}, {passive:true});
 
-  let paused=false, showHUD=true;
-
-  // ----- 3D camera + projection
-  // World units: centered around (0,0,0). Camera looks toward origin.
-  const cam = { x:0, y:0, z: 780 };
+  // ---- Camera & projection (very gentle)
+  const cam = { x:0, y:0, z: 880, f: 720 };
   function project(P){
-    // simple perspective
-    const z = (P.z + cam.z);
-    const f = 680 / Math.max(80, z); // focal-ish
-    return {
-      x: W*0.5 + P.x*f,
-      y: H*0.5 + P.y*f,
-      s: f,
-      z: z
-    };
+    const z = P.z + cam.z;
+    const inv = cam.f / Math.max(120, z);
+    return { x: W*0.5 + (P.x - cam.x)*inv, y: H*0.5 + (P.y - cam.y)*inv, s: inv, z };
+  }
+  function fog(z){
+    // 0..1 visibility
+    const near=260, far=1400;
+    return 1 - smooth(near, far, z);
   }
 
-  // ----- Scene elements
-  const STAR = 900;     // depth particles
-  const NODE = 96;      // lattice nodes
-  const stars = [];
-  const nodes = [];
-  const edges = [];     // edges are implicit; we'll draw by proximity
+  // ---- Smooth 3D value-noise + curl-ish flow
+  // We use a compact 3D value noise (hash+fade+trilinear), then build a "curl-like" field
+  // via finite differences of two independent scalar noise fields.
+  function hash3(ix,iy,iz){
+    // integer hash -> [0,1)
+    let h = ix|0;
+    h = (h * 374761393 + iy*668265263) | 0;
+    h = (h ^ (h>>13)) | 0;
+    h = (h * 1274126177 + iz*362437) | 0;
+    h = (h ^ (h>>16)) | 0;
+    return ((h>>>0) / 4294967296);
+  }
+  const fade = (t)=> t*t*t*(t*(t*6-15)+10);
+  function noise3(x,y,z){
+    const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+    const fx = x-ix, fy = y-iy, fz = z-iz;
+    const u = fade(fx), v = fade(fy), w = fade(fz);
 
-  // Spectrogram bins (curtain strips)
-  const BINS = 180;
-  const band = new Float32Array(BINS);
+    const n000 = hash3(ix,iy,iz);
+    const n100 = hash3(ix+1,iy,iz);
+    const n010 = hash3(ix,iy+1,iz);
+    const n110 = hash3(ix+1,iy+1,iz);
+    const n001 = hash3(ix,iy,iz+1);
+    const n101 = hash3(ix+1,iy,iz+1);
+    const n011 = hash3(ix,iy+1,iz+1);
+    const n111 = hash3(ix+1,iy+1,iz+1);
 
-  function reseed(){
-    seed = ((Date.now()*2654435761) ^ (Math.random()*1e9)) >>> 0;
+    const nx00 = n000*(1-u) + n100*u;
+    const nx10 = n010*(1-u) + n110*u;
+    const nx01 = n001*(1-u) + n101*u;
+    const nx11 = n011*(1-u) + n111*u;
 
-    stars.length=0; nodes.length=0;
+    const nxy0 = nx00*(1-v) + nx10*v;
+    const nxy1 = nx01*(1-v) + nx11*v;
 
-    // Starfield / grains in a volume
-    for(let i=0;i<STAR;i++){
-      stars.push({
-        x:r(-520,520),
-        y:r(-320,320),
-        z:r(-260,680),
-        vx:r(-0.05,0.05),
-        vy:r(-0.05,0.05),
-        hue:r(175,295),
-        w:r(0.6,2.1)
-      });
-    }
+    return nxy0*(1-w) + nxy1*w; // 0..1
+  }
 
-    // Lattice nodes distributed in a loose 3D slab
-    for(let i=0;i<NODE;i++){
-      nodes.push({
-        x:r(-420,420),
-        y:r(-240,240),
-        z:r(-120,520),
-        vx:r(-0.10,0.10),
-        vy:r(-0.10,0.10),
-        vz:r(-0.06,0.06),
-        hue:r(190,305),
-        p:r(0,1)
-      });
+  function curlField(x,y,z,t){
+    // scale coordinates into noise domain
+    const s = 0.0065;
+    const tt = t*0.12;
+
+    // two noise fields for smoother "curl-like" direction
+    const a = (noise3(x*s+17.2, y*s-3.1, z*s+tt) - 0.5);
+    const b = (noise3(x*s-9.7,  y*s+11.4, z*s-tt) - 0.5);
+    const c = (noise3(x*s+2.9,  y*s+6.6,  z*s+tt*0.8) - 0.5);
+
+    // finite differences (gentle)
+    const e = 18; // larger step = smoother derivatives
+    const ax = (noise3((x+e)*s+17.2, y*s-3.1, z*s+tt) - noise3((x-e)*s+17.2, y*s-3.1, z*s+tt));
+    const ay = (noise3(x*s+17.2, (y+e)*s-3.1, z*s+tt) - noise3(x*s+17.2, (y-e)*s-3.1, z*s+tt));
+    const az = (noise3(x*s+17.2, y*s-3.1, (z+e)*s+tt) - noise3(x*s+17.2, y*s-3.1, (z-e)*s+tt));
+
+    const bx = (noise3((x+e)*s-9.7, y*s+11.4, z*s-tt) - noise3((x-e)*s-9.7, y*s+11.4, z*s-tt));
+    const by = (noise3(x*s-9.7, (y+e)*s+11.4, z*s-tt) - noise3(x*s-9.7, (y-e)*s+11.4, z*s-tt));
+    const bz = (noise3(x*s-9.7, y*s+11.4, (z+e)*s-tt) - noise3(x*s-9.7, y*s+11.4, (z-e)*s-tt));
+
+    // "curl-like": cross gradients to get swirling flow
+    let vx = (ay*bz - az*by);
+    let vy = (az*bx - ax*bz);
+    let vz = (ax*by - ay*bx);
+
+    // normalize + bias with c for musical “phrasing”
+    const m = Math.hypot(vx,vy,vz) + 1e-6;
+    vx = vx/m + 0.22*a;
+    vy = vy/m + 0.22*b;
+    vz = vz/m + 0.22*c;
+
+    return { vx, vy, vz };
+  }
+
+  // ---- Particles (3D ribbons)
+  const PCOUNT = 1600;        // many particles, but very cheap strokes
+  const TRAIL = 9;            // stored history points per particle
+  const particles = [];
+
+  function init(){
+    particles.length = 0;
+    for(let i=0;i<PCOUNT;i++){
+      const p = {
+        x: r(-560,560),
+        y: r(-340,340),
+        z: r(-260,720),
+        hue: r(175,305),
+        w: r(0.6, 1.8),
+        s: r(0.8, 1.7),
+        hist: []
+      };
+      for(let k=0;k<TRAIL;k++) p.hist.push({x:p.x,y:p.y,z:p.z});
+      particles.push(p);
     }
   }
-  reseed();
+  init();
 
-  // ----- Helpers (glow + strokes)
-  function glowDot(x,y,radius, hue, alpha){
+  // ---- Spectral “sheets” (abstract spectrogram planes)
+  const SHEETS = 5;
+
+  // ---- Render helpers
+  function strokeTrail(hist, hue, alpha, width){
+    // draw as a smooth polyline with subtle glow
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = `hsla(${hue},95%,70%,1)`;
-    ctx.shadowColor = `hsla(${hue},95%,70%,0.55)`;
-    ctx.shadowBlur = 18;
-    ctx.beginPath();
-    ctx.arc(x,y,radius,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function softLine(x1,y1,x2,y2,w, hue, alpha){
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = `hsla(${hue},95%,70%,1)`;
-    ctx.lineWidth = w;
+    ctx.strokeStyle = `hsla(${hue}, 95%, 70%, 1)`;
+    ctx.lineWidth = width;
     ctx.lineCap = "round";
-    ctx.shadowColor = `hsla(${hue},95%,70%,0.35)`;
-    ctx.shadowBlur = 14;
+    ctx.lineJoin = "round";
+    ctx.shadowColor = `hsla(${hue}, 95%, 70%, 0.35)`;
+    ctx.shadowBlur = 16;
+
     ctx.beginPath();
-    ctx.moveTo(x1,y1);
-    ctx.lineTo(x2,y2);
+    let started = false;
+    for(let i=0;i<hist.length;i++){
+      const pr = project(hist[i]);
+      if(!started){ ctx.moveTo(pr.x, pr.y); started=true; }
+      else ctx.lineTo(pr.x, pr.y);
+    }
     ctx.stroke();
     ctx.restore();
   }
 
-  function fogAlpha(z){
-    // z is camera-space depth (bigger = farther)
-    const near=220, far=1200;
-    return 1 - smooth(near, far, z);
+  function softFillCircle(x,y,rad,hue,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const g = ctx.createRadialGradient(x,y,0, x,y, rad);
+    g.addColorStop(0, `hsla(${hue},95%,72%,0.9)`);
+    g.addColorStop(1, `hsla(${hue},95%,72%,0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x,y,rad,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
   }
 
-  // ----- Main loop
+  // ---- Loop
+  let paused=false, showHUD=true;
   let t0=performance.now(), last=t0;
+
+  // reduced motion: keep it smooth but slower
   const reduceMotion = matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function frame(now){
     requestAnimationFrame(frame);
     if(paused) return;
 
-    // If reduced motion, effectively slow time progression
     const rawDt = Math.min(0.033, (now-last)/1000);
     last = now;
-    const dt = reduceMotion ? rawDt*0.35 : rawDt;
+    const dt = reduceMotion ? rawDt*0.45 : rawDt;
 
     const t = (now - t0)/1000;
     const conduct = down ? 1.0 : 0.55;
-    const vel = Math.hypot(mvx,mvy);
-    const energy = clamp(vel/55, 0, 1) * conduct;
+    const energy = clamp(Math.hypot(mvx,mvy)/70, 0, 1) * conduct;
 
-    // Camera orbit (subtle)
-    const orbit = 0.35 + 0.40*energy;
-    cam.x = Math.sin(t*0.18)*110*orbit;
-    cam.y = Math.cos(t*0.14)*70*orbit;
+    // Camera: very subtle breathing/orbit (kept smooth)
+    cam.x = Math.sin(t*0.10) * 70 * (0.4 + 0.6*energy);
+    cam.y = Math.cos(t*0.08) * 40 * (0.4 + 0.6*energy);
 
-    // Trails
+    // Long-exposure trails: clear gently
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "rgba(4,6,10,0.12)";
+    ctx.fillStyle = "rgba(4,6,10,0.075)";
     ctx.fillRect(0,0,W,H);
 
-    // --- Build a “spectral” band array (cursor affects centroid)
-    const cy = (my/H);
-    for(let i=0;i<BINS;i++){
-      const u = i/(BINS-1);
-      const focus = Math.exp(-Math.pow(u - cy, 2) * 10.0);
-      const n1 = Math.sin(t*0.9 + u*7.0 + Math.sin(t*0.35 + u*9.0)*0.7);
-      const n2 = Math.sin(t*1.35 + u*15.0 + Math.cos(t*0.55 - u*6.0)*0.9);
-      const n3 = Math.sin(t*0.22 + u*34.0);
-      const a = 0.55 + 0.30*n1 + 0.18*n2 + 0.10*n3 + 0.25*focus*energy;
-      band[i] = clamp(0.5 + 0.5*a, 0, 1);
-    }
-
-    // --- 3D Spectrogram curtain plane
-    // Plane is a rotated slab in 3D; we draw vertical strips with height = band amplitude.
+    // Global additive for luminous ink
     ctx.globalCompositeOperation = "lighter";
-    const plane = {
-      z0: 240 + Math.sin(t*0.22)*55,
-      width: 980,
-      height: 520,
-      tilt: 0.55 + Math.sin(t*0.12)*0.18, // rotation around Y
-      roll: 0.08*Math.sin(t*0.17)         // slight roll
-    };
 
-    for(let i=0;i<BINS;i++){
-      const u = (i/(BINS-1))*2 - 1; // -1..1 across plane width
-      const amp = band[i];
+    // --- Abstract spectral sheets (implied spectrogram)
+    // A few translucent planes, warped by noise, moving in depth.
+    for(let s=0;s<SHEETS;s++){
+      const z0 = 120 + s*120 + 40*Math.sin(t*0.16 + s);
+      const hue = 185 + s*22 + 18*Math.sin(t*0.10 + s*2.0);
+      const alpha = (0.012 + 0.016*(1 - s/(SHEETS-1))) * (0.7 + 0.6*energy);
 
-      // 3D position of strip base center on plane
-      // rotate around Y (tilt) and around Z (roll)
-      const x0 = (u * plane.width*0.5);
-      const y0 = 0;
-      const z0 = plane.z0;
-
-      const ct = Math.cos(plane.tilt), st = Math.sin(plane.tilt);
-      let X = x0*ct + z0*st;
-      let Z = -x0*st + z0*ct;
-
-      const cr = Math.cos(plane.roll), sr = Math.sin(plane.roll);
-      let Y = y0*cr - X*sr;
-      X = y0*sr + X*cr;
-
-      // strip height in world units
-      const h = (0.10 + 0.90*amp) * plane.height;
-
-      // top and bottom points in 3D
-      const p1 = project({ x:X, y:Y - h*0.5, z:Z });
-      const p2 = project({ x:X, y:Y + h*0.5, z:Z });
-
-      // thickness based on depth
-      const w = clamp(1.0*p1.s, 0.6, 2.8);
-      const hue = 175 + 120*(i/(BINS-1)) + 50*Math.sin(t*0.18 + i*0.02);
-
-      const a = (0.02 + 0.10*amp) * fogAlpha((p1.z+p2.z)*0.5);
-      softLine(p1.x,p1.y,p2.x,p2.y,w,hue,a);
-    }
-
-    // --- Harmonic ribbon in 3D (polyline)
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    for(let rix=0; rix<3; rix++){
-      const phase = t*0.65 + rix*1.2;
-      const zBase = 60 + rix*110 + 50*Math.sin(t*0.12 + rix);
-      const hue = 195 + rix*22 + 30*Math.sin(t*0.14 + rix);
-
-      ctx.beginPath();
-      let started=false;
-
-      for(let i=0;i<=260;i++){
-        const u = i/260;
-        const x = (u*2-1) * 560;
-
-        // sample band by screen-ish mapping
-        const bi = Math.floor(clamp(u*(BINS-1), 0, BINS-1));
-        const amp = band[bi];
-
-        // waveform in Y + slight Z modulation for depth “twist”
-        const y =
-          Math.sin(phase + u*Math.PI*2*(2.0+rix*0.6))*55*(0.6+amp)
-          + Math.sin(phase*1.6 + u*Math.PI*2*(3.4+rix*0.4))*24*(0.6+amp)
-          + (my/H - 0.5)*80*energy;
-
-        const z = zBase + Math.sin(phase*1.1 + u*6.0)*40*(0.5+amp) + 120*(0.5-amp);
-
-        const p = project({x,y,z});
-        if(!started){ ctx.moveTo(p.x,p.y); started=true; }
-        else ctx.lineTo(p.x,p.y);
-      }
-
-      const alpha = 0.08 + 0.06*energy;
-      ctx.strokeStyle = `hsla(${hue},95%,72%,${alpha})`;
-      ctx.lineWidth = 1.3;
-      ctx.shadowColor = `hsla(${hue},95%,72%,0.45)`;
+      // Draw as a soft ribbon band across X with noise-warped Y, projected from 3D
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = `hsla(${hue}, 95%, 70%, 1)`;
+      ctx.lineWidth = 1.1;
+      ctx.shadowColor = `hsla(${hue},95%,70%,0.25)`;
       ctx.shadowBlur = 18;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-    ctx.restore();
+      ctx.beginPath();
 
-    // --- Lattice nodes in 3D (AI/graph feel)
-    // Cursor pulls in world space: map cursor to target point near origin
+      let started=false;
+      for(let i=0;i<=220;i++){
+        const u = i/220;
+        const x = (u*2-1)*620;
+
+        // "time-frequency energy" warp
+        const ny = noise3(x*0.006 + 8.0, s*12.0, z0*0.008 + t*0.10);
+        const ny2 = noise3(x*0.004 - 3.0, s*7.0, z0*0.010 - t*0.08);
+        const y = (ny-0.5)*220 + (ny2-0.5)*110 + (my/H - 0.5)*90*energy;
+
+        const P = project({x, y, z: z0});
+        if(!started){ ctx.moveTo(P.x,P.y); started=true; }
+        else ctx.lineTo(P.x,P.y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // --- Particle ribbons advected by smooth 3D curl field
     const target = {
-      x: (mx/W - 0.5) * 220,
-      y: (my/H - 0.5) * 160,
-      z: 220 + 200*(0.5 - (my/H))
+      x: (mx/W - 0.5) * 280,
+      y: (my/H - 0.5) * 190,
+      z: 260 + 220*(0.5 - my/H)
     };
 
-    for(const n of nodes){
-      // attraction to target
-      const dx = n.x - target.x;
-      const dy = n.y - target.y;
-      const dz = n.z - target.z;
+    for(const p of particles){
+      // flow
+      const f = curlField(p.x, p.y, p.z, t);
+      const sp = p.s * (0.75 + 0.55*energy);
+
+      // gentle "conducting" attraction (kept soft to avoid jitter)
+      const dx = target.x - p.x;
+      const dy = target.y - p.y;
+      const dz = target.z - p.z;
       const d = Math.hypot(dx,dy,dz) + 1e-6;
+      const pull = smooth(900, 220, d) * (0.10 + 0.22*energy) * conduct;
 
-      const pull = smooth(520, 120, d) * (0.08 + 0.35*energy);
-      n.vx += (-dx/d) * pull * conduct;
-      n.vy += (-dy/d) * pull * conduct;
-      n.vz += (-dz/d) * pull * conduct;
+      // integrate
+      p.x += (f.vx*160*dt*sp + (dx/d)*pull*110*dt);
+      p.y += (f.vy*160*dt*sp + (dy/d)*pull*110*dt);
+      p.z += (f.vz*160*dt*sp + (dz/d)*pull*110*dt);
 
-      // gentle drift
-      n.vx += Math.sin(t*0.35 + n.p*9.0)*0.010;
-      n.vy += Math.cos(t*0.28 + n.p*7.0)*0.010;
-      n.vz += Math.sin(t*0.22 + n.p*8.0)*0.008;
+      // wrap in a 3D volume
+      if(p.x < -720) p.x = 720; else if(p.x > 720) p.x = -720;
+      if(p.y < -460) p.y = 460; else if(p.y > 460) p.y = -460;
+      if(p.z < -360) p.z = 760; else if(p.z > 760) p.z = -360;
 
-      // damping
-      n.vx *= 0.985;
-      n.vy *= 0.985;
-      n.vz *= 0.988;
+      // update trail history (shift oldest)
+      p.hist.pop();
+      p.hist.unshift({x:p.x, y:p.y, z:p.z});
 
-      n.x += n.vx;
-      n.y += n.vy;
-      n.z += n.vz;
+      // draw trail with depth-aware alpha
+      const head = project(p.hist[0]);
+      const vis = fog(head.z);
+      const a = (0.010 + 0.028*vis) * (0.7 + 0.8*energy);
+      const w = clamp(p.w * (0.7 + head.s*1.6), 0.45, 2.6);
 
-      // bounds
-      n.x = clamp(n.x, -520, 520);
-      n.y = clamp(n.y, -320, 320);
-      n.z = clamp(n.z, -220, 720);
-    }
+      // hue gently modulated by depth + time (very smooth)
+      const hue = p.hue + 18*Math.sin(t*0.10 + p.z*0.006);
 
-    // Draw edges by proximity in 3D (projected)
-    for(let i=0;i<nodes.length;i++){
-      const a = nodes[i];
-      const pa = project(a);
-      const aa = fogAlpha(pa.z);
-      for(let j=i+1;j<nodes.length;j++){
-        const b = nodes[j];
-        const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z;
-        const d = Math.hypot(dx,dy,dz);
-        if(d < 160){
-          const pb = project(b);
-          const bb = fogAlpha(pb.z);
-          const alpha = (1 - d/160) * (0.020 + 0.070*energy) * Math.min(aa,bb);
-          const hue = (a.hue+b.hue)*0.5 + 18*Math.sin(t*0.18);
-          const w = clamp(0.9 * ((pa.s+pb.s)*0.5), 0.6, 1.8);
-          softLine(pa.x,pa.y,pb.x,pb.y,w,hue,alpha);
-        }
+      strokeTrail(p.hist, hue, a, w);
+
+      // occasional soft “grain bloom” (very subtle)
+      if((p.hue|0) % 37 === 0){
+        softFillCircle(head.x, head.y, 18*(0.5+head.s), hue, a*0.22);
       }
     }
 
-    // Draw nodes
-    for(const n of nodes){
-      const p = project(n);
-      const hot = smooth(520, 120, Math.hypot(n.x-target.x, n.y-target.y, n.z-target.z)) * (0.4+0.6*energy);
-      const alpha = (0.06 + 0.12*hot) * fogAlpha(p.z);
-      const rad = clamp(1.0*p.s + 1.6*hot, 0.9, 4.2);
-      glowDot(p.x,p.y,rad,n.hue,alpha);
-    }
-
-    // --- Star / grain volume (depth particles)
-    for(const s of stars){
-      // drift with slight curl + cursor energy
-      const curl = Math.sin(t*0.5 + s.z*0.01) * 0.03;
-      s.x += (s.vx + curl) * (1 + 0.7*energy);
-      s.y += (s.vy - curl) * (1 + 0.7*energy);
-      s.z += (-0.12 - 0.25*energy); // forward motion toward camera
-
-      // wrap around volume
-      if(s.x<-560) s.x=560; if(s.x>560) s.x=-560;
-      if(s.y<-360) s.y=360; if(s.y>360) s.y=-360;
-      if(s.z<-260) s.z=680;
-
-      const p = project(s);
-      const a = (0.02 + 0.08*(p.s)) * fogAlpha(p.z);
-      const rad = clamp(s.w * (0.7 + 1.2*p.s), 0.5, 3.2);
-
-      // hue subtly depends on depth
-      const hue = s.hue + 25*Math.sin(t*0.12 + s.z*0.01);
-      glowDot(p.x,p.y,rad,hue,a);
-    }
-
-    // --- Cursor halo (depthy)
+    // --- Central halo (quiet, not flashy)
     ctx.save();
-    ctx.globalCompositeOperation="lighter";
-    const halo = 0.018 + 0.10*energy;
-    const g = ctx.createRadialGradient(mx,my, 0, mx,my, 260);
-    g.addColorStop(0, `rgba(255,255,255,${halo})`);
-    g.addColorStop(0.25, `rgba(120,255,240,${halo*0.65})`);
-    g.addColorStop(0.62, `rgba(180,120,255,${halo*0.45})`);
+    ctx.globalCompositeOperation = "lighter";
+    const haloA = 0.012 + 0.08*energy;
+    const g = ctx.createRadialGradient(mx,my, 0, mx,my, 320);
+    g.addColorStop(0, `rgba(255,255,255,${haloA})`);
+    g.addColorStop(0.26, `rgba(120,255,240,${haloA*0.55})`);
+    g.addColorStop(0.62, `rgba(180,120,255,${haloA*0.40})`);
     g.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(mx,my, 260, 0, Math.PI*2);
+    ctx.arc(mx,my, 320, 0, Math.PI*2);
     ctx.fill();
     ctx.restore();
   }
 
-  // Init
+  // ---- Init background
   ctx.fillStyle = "rgba(4,6,10,1)";
   ctx.fillRect(0,0,W,H);
   requestAnimationFrame(frame);
 
-  // Controls
+  // ---- Controls
   addEventListener("keydown", (e)=>{
     const k = e.key.toLowerCase();
-    if(k===" "){ e.preventDefault(); paused=!paused; if(!paused) last=performance.now(); }
-    else if(k==="r"){ reseed(); }
+    if(k===" "){ e.preventDefault(); paused=!paused; }
+    else if(k==="r"){ seed = (Date.now() ^ (Math.random()*1e9))>>>0; init(); }
     else if(k==="h"){
       showHUD = !showHUD;
       document.querySelector(".hud").style.display = showHUD ? "grid" : "none";
     } else if(k==="s"){
       try{
         const a=document.createElement("a");
-        a.download="music-informatics-3d.png";
+        a.download="music-informatics-abstract-flow.png";
         a.href=canvas.toDataURL("image/png");
         a.click();
       }catch(_){}
     }
   });
+
 })();
 </script>
 </body>
